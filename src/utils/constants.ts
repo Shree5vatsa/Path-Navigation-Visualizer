@@ -33,7 +33,7 @@ export const traversedTileStyle = tileStyle + " bg-cyan-400";
 export const startTileStyle = tileStyle + " bg-green-400";
 export const endTileStyle = tileStyle + " bg-red-400";
 
-export const wallTileStyle = tileStyle + " bg-gray-400";
+export const wallTileStyle = tileStyle + " bg-gray-300";
 export const pathTileStyle = tileStyle + " bg-green-500";
 
 export const MAZES: MazeSelectType[] = [
