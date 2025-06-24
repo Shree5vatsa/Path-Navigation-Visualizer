@@ -3,7 +3,7 @@ import { Grid } from "./components/grid";
 import { PathAlgoProvider } from "./context/PathAlgoContext";
 import { SpeedProvider } from "./context/SpeedContext";
 import { TileProvider } from "./context/TileContext";
-import { Nav } from "./components/nav";
+import { Nav } from "./components/Nav";
 
 
 

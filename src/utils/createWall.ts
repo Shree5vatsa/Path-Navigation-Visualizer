@@ -3,7 +3,7 @@ import { isTileSame } from "./helpers";
 import type { SpeedType, TileType } from "./types";
 
 
-export const createWall = (
+export const createWall = async(
   startTile: TileType,
   endTile: TileType,
   speed: SpeedType
@@ -19,9 +19,9 @@ export const createWall = (
             !isTileSame(row, col, endTile)
           ) {
             setTimeout(() => {
-              document.getElementById(
-                `${row}-${col}`
-              )!.className = `${wallTileStyle} animate-wall`;
+                document.getElementById(
+                  `${row}-${col}`
+                )!.className = `${wallTileStyle} animate-wall`;
             }, delay * col);
           }
         }

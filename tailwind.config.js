@@ -1,4 +1,4 @@
-/**@type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 export default {
     content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
     theme: {
@@ -6,13 +6,18 @@ export default {
             keyframes: {
                 wall: {
                     "0%": {
-                        transform:"scale(0.7)"
+                        transform: "scale(0.7)",
+                        opacity: "0"
                     },
                     "100%": {
-                        transform: "scale(1)"
-                    }
+                        transform: "scale(1)",
+                        opacity: "1"
+                    },
                 }
-            }
+            },
+            animation: {
+                'wall': 'wall 0.3s ease',
+            },
         },
     },
     plugins: [],
