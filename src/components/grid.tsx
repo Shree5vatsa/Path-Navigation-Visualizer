@@ -1,6 +1,6 @@
 import { twMerge } from "tailwind-merge";
 import { usePathAlgo } from "../hooks/usePathAlgo";
-import { maxCols, maxRows } from "../utils/constants";
+import { maxCols, maxRows, wallTileStyle, tileStyle } from "../utils/constants";
 import { Tile } from "./tile";
 import { useRef, useState, type MutableRefObject } from "react";
 import { checkIfStartOrEnd, createNewGrid } from "../utils/helpers";
@@ -29,6 +29,8 @@ export function Grid({ isNavigationRunningRef }: { isNavigationRunningRef: Mutab
   const { grid, setGrid } = usePathAlgo();
   const [isMouseDown, setIsMouseDown] = useState(false);
   const lastTileRef = useRef<{ row: number; col: number } | null>(null);
+  const wallSetRef = useRef<Set<string>>(new Set()); // Track which tiles were toggled in this drag
+  const dragActionRef = useRef<'wall' | 'normal' | null>(null); // Track intended action for this drag
 
   const handleGridMouseDown = (e: React.MouseEvent) => {
     if (isNavigationRunningRef.current) return;
@@ -36,13 +38,44 @@ export function Grid({ isNavigationRunningRef }: { isNavigationRunningRef: Mutab
     if (!indices || checkIfStartOrEnd(indices.row, indices.col)) return;
     setIsMouseDown(true);
     lastTileRef.current = indices;
-    setGrid(createNewGrid({ grid, row: indices.row, col: indices.col }));
+    wallSetRef.current = new Set();
+    // Determine intended action: toggle to wall or to normal
+    const el = document.getElementById(`${indices.row}-${indices.col}`);
+    const isWall = el && el.className.includes("bg-gray-300");
+    dragActionRef.current = isWall ? 'normal' : 'wall';
+    drawToggle(indices.row, indices.col);
   };
 
   const handleGridMouseUp = () => {
     setIsMouseDown(false);
     lastTileRef.current = null;
+    dragActionRef.current = null;
+    // Sync DOM changes to React state
+    const newGrid = grid.map(row => row.map(tile => {
+      const id = `${tile.row}-${tile.col}`;
+      const el = document.getElementById(id);
+      if (el && el.className.includes("bg-gray-300")) {
+        return { ...tile, isWall: true };
+      } else {
+        return { ...tile, isWall: false };
+      }
+    }));
+    setGrid(newGrid);
   };
+
+  function drawToggle(row: number, col: number) {
+    const id = `${row}-${col}`;
+    if (wallSetRef.current.has(id)) return; // Avoid toggling the same tile multiple times in one drag
+    wallSetRef.current.add(id);
+    if (checkIfStartOrEnd(row, col)) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (dragActionRef.current === 'wall') {
+      el.className = twMerge(wallTileStyle, el.className.includes("border-b") ? "border-b" : "", el.className.includes("border-l") ? "border-l" : "");
+    } else if (dragActionRef.current === 'normal') {
+      el.className = twMerge(tileStyle, el.className.includes("border-b") ? "border-b" : "", el.className.includes("border-l") ? "border-l" : "");
+    }
+  }
 
   const handleGridMouseMove = (e: React.MouseEvent) => {
     if (!isMouseDown || isNavigationRunningRef.current) return;
@@ -50,11 +83,9 @@ export function Grid({ isNavigationRunningRef }: { isNavigationRunningRef: Mutab
     if (!indices || checkIfStartOrEnd(indices.row, indices.col)) return;
     const last = lastTileRef.current;
     if (!last || (last.row === indices.row && last.col === indices.col)) return;
-    let newGrid = grid;
-    for (const tile of interpolateTiles(last, indices))
-      if (!checkIfStartOrEnd(tile.row, tile.col))
-        newGrid = createNewGrid({ grid: newGrid, row: tile.row, col: tile.col });
-    setGrid(newGrid);
+    for (const tile of interpolateTiles(last, indices)) {
+      drawToggle(tile.row, tile.col);
+    }
     lastTileRef.current = indices;
   };
 
