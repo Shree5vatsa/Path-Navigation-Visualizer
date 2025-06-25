@@ -1,7 +1,7 @@
 import type { MazeSelectType, SpeedSelectType } from "./types";
 
-export const maxRows = 39;
-export const maxCols = 89;
+export const maxRows = 47;
+export const maxCols = 99;
 
 export const startTile_config = {
     row: 1,
@@ -27,7 +27,7 @@ export const endTile_config = {
     isTraversed: false
 };
 
-export const tileStyle = "lg:w-[17px] md:w-[15px] xs:w-[7px] w-[7px] lg:h-[17px] md:h-[15px] xs:h-[8px] h-[7px] border-t border-r border-sky-200 bg-gray-800";
+export const tileStyle = "lg:w-[22px] md:w-[19px] xs:w-[10px] w-[10px] lg:h-[22px] md:h-[19px] xs:h-[11px] h-[10px] border-t border-r border-sky-200";
 
 export const traversedTileStyle = tileStyle + " bg-cyan-400";
 export const startTileStyle = tileStyle + " bg-green-400";

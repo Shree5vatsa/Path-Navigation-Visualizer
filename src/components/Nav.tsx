@@ -10,20 +10,20 @@ import { MAZES } from "../utils/constants";
 
 export function Nav() {
   const [isDisabled, setIsDisabled] = useState(false);
-  const { maze, setMaze, grid, setGrid } = usePathAlgo();
+  const { maze, setMaze, grid, setGrid, setIsGraphVisualized } = usePathAlgo();
   const { startTile, endTile } = useTile();
   const { speed } = useSpeed();
 
   const handleGenerateMaze = (maze: MazeType) => {
+    setMaze(maze);
+
     if (maze === "NONE") {
-      setMaze(maze);
       ResetGrid({ grid, startTile, endTile });
       setGrid(grid.map((row) => row.map((tile) => ({ ...tile }))));
       setIsDisabled(false);
       return;
     }
 
-    setMaze(maze);
     setIsDisabled(true);
     runMazeAlgo({
       maze,
@@ -32,8 +32,10 @@ export function Nav() {
       endTile,
       setIsDisabled,
       speed,
-      // Do NOT pass setGrid here!
     });
+    const newGrid = grid.slice();
+    setGrid(newGrid);
+    setIsGraphVisualized(false);
   };
 
   return (
