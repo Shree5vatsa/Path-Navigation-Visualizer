@@ -2,74 +2,91 @@ import { twMerge } from "tailwind-merge";
 import { usePathAlgo } from "../hooks/usePathAlgo";
 import { maxCols, maxRows } from "../utils/constants";
 import { Tile } from "./tile";
-import * as React from "react";
+import { useRef, useState, type MutableRefObject } from "react";
 import { checkIfStartOrEnd, createNewGrid } from "../utils/helpers";
 
-export function Grid({
-  isNavigationRunningRef,
-}: {
-  isNavigationRunningRef: React.RefObject<boolean>;
-}) {
+function getTileIndices(e: React.MouseEvent): { row: number; col: number } | null {
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  if (!el || !(el instanceof HTMLElement)) return null;
+  const [row, col] = el.id.split("-").map(Number);
+  return !isNaN(row) && !isNaN(col) && row >= 0 && row < maxRows && col >= 0 && col < maxCols
+    ? { row, col }
+    : null;
+}
+
+function interpolateTiles(from: { row: number; col: number }, to: { row: number; col: number }) {
+  const tiles = [];
+  const dr = to.row - from.row, dc = to.col - from.col, steps = Math.max(Math.abs(dr), Math.abs(dc));
+  for (let i = 1; i <= steps; i++)
+    tiles.push({
+      row: Math.round(from.row + (dr * i) / steps),
+      col: Math.round(from.col + (dc * i) / steps),
+    });
+  return tiles;
+}
+
+export function Grid({ isNavigationRunningRef }: { isNavigationRunningRef: MutableRefObject<boolean> }) {
   const { grid, setGrid } = usePathAlgo();
-  const [isMouseDown, setIsMouseDown] = React.useState(false);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const lastTileRef = useRef<{ row: number; col: number } | null>(null);
 
-  // Block all mouse events if animation is running
-  const isBlocked = isNavigationRunningRef.current;
-
-  const handleMouseDown = (row: number, col: number) => {
-    if (isBlocked || checkIfStartOrEnd(row, col)) return;
+  const handleGridMouseDown = (e: React.MouseEvent) => {
+    if (isNavigationRunningRef.current) return;
+    const indices = getTileIndices(e);
+    if (!indices || checkIfStartOrEnd(indices.row, indices.col)) return;
     setIsMouseDown(true);
-    const newGrid = createNewGrid({ grid, row, col });
-    setGrid(newGrid);
+    lastTileRef.current = indices;
+    setGrid(createNewGrid({ grid, row: indices.row, col: indices.col }));
   };
 
-  const handleMouseUp = (row: number, col: number) => {
-    if (isBlocked || checkIfStartOrEnd(row, col)) return;
+  const handleGridMouseUp = () => {
     setIsMouseDown(false);
+    lastTileRef.current = null;
   };
 
-  const handleMouseEnter = (row: number, col: number) => {
-    if (isBlocked || checkIfStartOrEnd(row, col)) return;
-    if (isMouseDown) {
-      const newGrid = createNewGrid({ grid, row, col });
-      setGrid(newGrid);
-    }
+  const handleGridMouseMove = (e: React.MouseEvent) => {
+    if (!isMouseDown || isNavigationRunningRef.current) return;
+    const indices = getTileIndices(e);
+    if (!indices || checkIfStartOrEnd(indices.row, indices.col)) return;
+    const last = lastTileRef.current;
+    if (!last || (last.row === indices.row && last.col === indices.col)) return;
+    let newGrid = grid;
+    for (const tile of interpolateTiles(last, indices))
+      if (!checkIfStartOrEnd(tile.row, tile.col))
+        newGrid = createNewGrid({ grid: newGrid, row: tile.row, col: tile.col });
+    setGrid(newGrid);
+    lastTileRef.current = indices;
   };
 
   return (
     <div
       className={twMerge(
-        "flex items-center flex-col justify-center border-ski-300 mt-10",
-        `lg:min-h-[${maxRows * 17}px] md:min-h-[${maxRows * 15}px] xs:min-h-[${
-          maxRows * 8
-        }px] min-h-[${maxRows * 7}px]`,
-        `lg:min-w-[${maxCols * 17}px] md:min-w-[${maxCols * 15}px] xs:min-w-[${
-          maxCols * 8
-        }px] min-w-[${maxCols * 7}px]`
+        "flex items-center flex-col justify-center border-sky-300 mt-10",
+        `lg:min-h-[${maxRows * 22}px] md:min-h-[${maxRows * 18}px] xs:min-h-[${maxRows * 11}px] min-h-[${maxRows * 9}px]`,
+        `lg:w-[${maxCols * 22}px] md:w-[${maxCols * 18}px] xs:w-[${maxCols * 11}px] w-[${maxCols * 9}px]`
       )}
-      style={isBlocked ? { pointerEvents: "none", opacity: 0.7 } : {}}
+      onMouseDown={handleGridMouseDown}
+      onMouseUp={handleGridMouseUp}
+      onMouseLeave={handleGridMouseUp}
+      onMouseMove={handleGridMouseMove}
     >
-      {grid.map((roww, rowIndex) => (
+      {grid.map((row, rowIndex) => (
         <div key={rowIndex} className="flex">
-          {roww.map((tile, tileIndex) => {
-            const { row, col, isEnd, isStart, isWall, isPath, isTraversed } =
-              tile;
-            return (
-              <Tile
-                key={tileIndex}
-                row={tile.row}
-                col={tile.col}
-                isStart={isStart}
-                isEnd={isEnd}
-                isWall={isWall}
-                isPath={isPath}
-                isTraversed={isTraversed}
-                handleMouseDown={() => handleMouseDown(row, col)}
-                handleMouseUp={() => handleMouseUp(row, col)}
-                handleMouseEnter={() => handleMouseEnter(row, col)}
-              />
-            );
-          })}
+          {row.map((tile, tileIndex) => (
+            <Tile
+              key={tileIndex}
+              row={tile.row}
+              col={tile.col}
+              isEnd={tile.isEnd}
+              isStart={tile.isStart}
+              isPath={tile.isPath}
+              isTraversed={tile.isTraversed}
+              isWall={tile.isWall}
+              handleMouseDown={() => {}}
+              handleMouseUp={() => {}}
+              handleMouseEnter={() => {}}
+            />
+          ))}
         </div>
       ))}
     </div>
