@@ -15,7 +15,7 @@ export interface PathAlgoContextInterface {//context structure
     setMaze: (maze: MazeType) => void; 
     grid: GridType;
     setGrid: (grid: GridType) => void;
-    isGraphvisualized: boolean;
+    isGraphVisualized: boolean;
     setIsGraphVisualized: (isGraphVisualized: boolean) => void;
 }
 
@@ -27,7 +27,7 @@ export const PathAlgoProvider = ({ children }: { children: ReactNode }) => {
     const [algorithm, setAlgorithm] = useState<AlgorithmType>("BFS");
     const [maze, setMaze] = useState<MazeType>("NONE");
     const [grid, setGrid] = useState<GridType>(createGrid(startTile_config, endTile_config)); // Initialize with a grid containing only the start tile
-    const [isGraphvisualized, setIsGraphVisualized] = useState<boolean>(false);
+    const [isGraphVisualized, setIsGraphVisualized] = useState<boolean>(false);
 
     return (
         <PathAlgoContext.Provider value={{
@@ -37,7 +37,7 @@ export const PathAlgoProvider = ({ children }: { children: ReactNode }) => {
             setMaze,
             grid,
             setGrid,
-            isGraphvisualized,
+            isGraphVisualized,
             setIsGraphVisualized
         }}>
             {children}

@@ -1,7 +1,7 @@
-import type { MazeSelectType, SpeedSelectType } from "./types";
+import type { AlgorithmSelectType, MazeSelectType, SpeedSelectType } from "./types";
 
-export const maxRows = 49;
-export const maxCols = 99;
+export const maxRows = 37;
+export const maxCols = 83;
 
 export const startTile_config = {
     row: 1,
@@ -42,7 +42,13 @@ export const MAZES: MazeSelectType[] = [
     { name: "Recursive Division", value: "RECURSIVE_DIVISION" },
     
 ];
-
+export const NavigatingAlgorithms: AlgorithmSelectType[] = [
+    { name: "Dijkstra", value: "Dijkstra" },
+    { name: "A* Search", value: "AStar" },
+    { name: "Breadth First Search", value: "BFS" },
+    { name: "Depth First Search", value: "DFS" },
+    //{ name: "Greedy Best First Search", value: "GreedyBestFirstSearch" },
+]
 
 export const SPEEDS: SpeedSelectType[] = [
     { name: "Slow", value: 2 },
@@ -50,3 +56,5 @@ export const SPEEDS: SpeedSelectType[] = [
     { name: "Fast", value: 0.5 },
     
 ];
+
+export const SLEEP_TIME = 10;

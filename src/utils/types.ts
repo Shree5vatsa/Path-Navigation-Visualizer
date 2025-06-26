@@ -1,6 +1,11 @@
 export type AlgorithmType = "Dijkstra" | "AStar" | "BFS" | "DFS" | "GreedyBestFirstSearch";
-export type MazeType = "NONE" | "BINARY_TREE" | "RECURSIVE_DIVISION";
 
+export interface AlgorithmSelectType {
+    name: string;
+    value: AlgorithmType;
+}
+
+export type MazeType = "NONE" | "BINARY_TREE" | "RECURSIVE_DIVISION";
 export interface MazeSelectType{
     name: string;
     value: MazeType;
