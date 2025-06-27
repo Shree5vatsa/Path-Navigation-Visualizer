@@ -104,10 +104,10 @@ export function Grid({ isNavigationRunningRef }: { isNavigationRunningRef: Mutab
       {grid.map((row, rowIndex) => (
         <div key={rowIndex} className="flex">
           {row.map((tile, tileIndex) => (
-            <Tile
-              key={tileIndex}
-              row={tile.row}
-              col={tile.col}
+              <Tile
+                key={tileIndex}
+                row={tile.row}
+                col={tile.col}
               isEnd={tile.isEnd}
               isStart={tile.isStart}
               isPath={tile.isPath}
@@ -116,7 +116,7 @@ export function Grid({ isNavigationRunningRef }: { isNavigationRunningRef: Mutab
               handleMouseDown={() => {}}
               handleMouseUp={() => {}}
               handleMouseEnter={() => {}}
-            />
+              />
           ))}
         </div>
       ))}
