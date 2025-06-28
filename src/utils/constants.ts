@@ -27,7 +27,7 @@ export const endTile_config = {
     isTraversed: false
 };
 
-export const tileStyle = "lg:w-[22px] md:w-[19px] xs:w-[10px] w-[10px] lg:h-[22px] md:h-[19px] xs:h-[11px] h-[10px] border-t border-r border-sky-200";
+export const tileStyle = "transition-all lg:w-[22px] md:w-[19px] xs:w-[10px] w-[10px] lg:h-[22px] md:h-[19px] xs:h-[11px] h-[10px] border-t border-r border-sky-200";
 
 export const traversedTileStyle = tileStyle + " bg-cyan-400";
 export const startTileStyle = tileStyle + " bg-green-400";
