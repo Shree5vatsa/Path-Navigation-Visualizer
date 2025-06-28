@@ -112,6 +112,14 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
               setAlgorithm(e.target.value as AlgorithmType);
             }}
           />
+          <Select
+            label="Speed"
+            value={speed}
+            options={SPEEDS}
+            onChange={(e) => {
+              setSpeed(parseFloat(e.target.value) as SpeedType)
+            }}
+          />
       
           <PlayBtn
             isDisabled={isDisabled}
