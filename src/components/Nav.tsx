@@ -1,3 +1,4 @@
+// src/components/Nav.tsx
 import { useState } from "react";
 import type { AlgorithmType, MazeType, SpeedType } from "../utils/types";
 import { usePathAlgo } from "../hooks/usePathAlgo";
@@ -6,13 +7,7 @@ import { useSpeed } from "../hooks/useSpeed";
 import { ResetGrid } from "../utils/ResetGrid";
 import { runMazeAlgo } from "../utils/runMazeAlgo";
 import { Select } from "./Select";
-import {
-  extendedSLEEP_TIME,
-  MAZES,
-  NavigatingAlgorithms,
-  SLEEP_TIME,
-  SPEEDS,
-} from "../utils/constants";
+import { MAZES, NavigatingAlgorithms, SPEEDS } from "../utils/constants";
 import { PlayBtn } from "./PlayBtn";
 import { runPathAlgorithm } from "../utils/runPathAlgorithm";
 import { animatePath } from "../utils/animatePath";
@@ -21,6 +16,7 @@ import type { MutableRefObject } from "react";
 interface NavProps {
   isNavigationRunningRef: MutableRefObject<boolean>;
 }
+
 export function Nav({ isNavigationRunningRef }: NavProps) {
   const [isDisabled, setIsDisabled] = useState(false);
   const {
@@ -54,37 +50,38 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
       setIsDisabled,
       speed,
     });
-    const newGrid = grid.slice();
-    setGrid(newGrid);
+    setGrid(grid.slice());
     setIsGraphVisualized(false);
   };
 
-  const handlerRunVisualizer = () => {
+  const handlerRunVisualizer = async () => {
     if (isGraphVisualized) {
       setIsGraphVisualized(false);
       ResetGrid({ grid: grid.slice(), startTile, endTile });
       return;
     }
+
     const result = runPathAlgorithm({
       algorithm,
       grid,
       startTile,
       endTile,
     });
+    if (!result) return;
 
-    if (result) {
-      const { traversedTiles, path } = result;
-      animatePath(traversedTiles, path, startTile, endTile, speed);
-      setIsDisabled(true);
-      isNavigationRunningRef.current = true;
-      setTimeout(() => {
-        const newGrid = grid.slice();
-        setGrid(newGrid);
-        setIsGraphVisualized(true);
-        setIsDisabled(false);
-        isNavigationRunningRef.current = false;
-      }, SLEEP_TIME * (traversedTiles.length + SLEEP_TIME * 2) + extendedSLEEP_TIME * (path.length + 60) * SPEEDS.find((s) => s.value === speed)!.value);
-    }
+    const { traversedTiles, path } = result;
+
+    setIsDisabled(true);
+    isNavigationRunningRef.current = true;
+
+    // Await until all CSS animations (traverse + path) finish
+    await animatePath(traversedTiles, path, startTile, endTile, speed);
+
+    // Sync state and re-enable UI
+    setGrid(grid.slice());
+    setIsGraphVisualized(true);
+    setIsDisabled(false);
+    isNavigationRunningRef.current = false;
   };
 
   return (
@@ -99,28 +96,21 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
             value={maze}
             options={MAZES}
             isDisabled={isDisabled}
-            onChange={(e) => {
-              handleGenerateMaze(e.target.value as MazeType);
-            }}
+            onChange={(e) => handleGenerateMaze(e.target.value as MazeType)}
           />
           <Select
             label="Graph"
             value={algorithm}
             options={NavigatingAlgorithms}
             isDisabled={isDisabled}
-            onChange={(e) => {
-              setAlgorithm(e.target.value as AlgorithmType);
-            }}
+            onChange={(e) => setAlgorithm(e.target.value as AlgorithmType)}
           />
           <Select
             label="Speed"
             value={speed}
             options={SPEEDS}
-            onChange={(e) => {
-              setSpeed(parseFloat(e.target.value) as SpeedType)
-            }}
+            onChange={(e) => setSpeed(parseFloat(e.target.value) as SpeedType)}
           />
-      
           <PlayBtn
             isDisabled={isDisabled}
             isPathNavigated={isGraphVisualized}
