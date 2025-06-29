@@ -10,7 +10,6 @@ import { Select } from "./Select";
 import { MAZES, NavigatingAlgorithms, SPEEDS } from "../utils/constants";
 import { PlayBtn } from "./PlayBtn";
 import { runPathAlgorithm } from "../utils/runPathAlgorithm";
-import { animatePath } from "../utils/animatePath";
 import type { MutableRefObject } from "react";
 
 interface NavProps {
@@ -55,29 +54,26 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
   };
 
   const handlerRunVisualizer = async () => {
+    // If already visualized, reset
     if (isGraphVisualized) {
       setIsGraphVisualized(false);
       ResetGrid({ grid: grid.slice(), startTile, endTile });
       return;
     }
 
-    const result = runPathAlgorithm({
+    // Start the algorithm + animations
+    setIsDisabled(true);
+    isNavigationRunningRef.current = true;
+
+    await runPathAlgorithm({
       algorithm,
       grid,
       startTile,
       endTile,
+      speed,
     });
-    if (!result) return;
 
-    const { traversedTiles, path } = result;
-
-    setIsDisabled(true);
-    isNavigationRunningRef.current = true;
-
-    // Await until all CSS animations (traverse + path) finish
-    await animatePath(traversedTiles, path, startTile, endTile, speed);
-
-    // Sync state and re-enable UI
+    // Once done, sync state and re-enable UI
     setGrid(grid.slice());
     setIsGraphVisualized(true);
     setIsDisabled(false);

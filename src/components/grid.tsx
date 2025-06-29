@@ -25,7 +25,7 @@ function interpolateTiles(
   from: { row: number; col: number },
   to: { row: number; col: number }
 ) {
-  const tiles = [];
+  const tiles: { row: number; col: number }[] = [];
   const dr = to.row - from.row,
     dc = to.col - from.col;
   const steps = Math.max(Math.abs(dr), Math.abs(dc));
@@ -49,13 +49,18 @@ export function Grid({
   const wallSetRef = useRef<Set<string>>(new Set());
   const dragActionRef = useRef<"wall" | "normal" | null>(null);
 
+  // If navigation is running, we block *all* pointer events on the wrapper DIV
+  const wrapperPointerClass = isNavigationRunningRef.current
+    ? "pointer-events-none"
+    : "";
+
   const handleGridMouseDown = (e: React.MouseEvent) => {
     if (isNavigationRunningRef.current) return;
     const indices = getTileIndices(e);
     if (!indices || checkIfStartOrEnd(indices.row, indices.col)) return;
     setIsMouseDown(true);
     lastTileRef.current = indices;
-    wallSetRef.current = new Set();
+    wallSetRef.current.clear();
     const el = document.getElementById(`${indices.row}-${indices.col}`);
     const isWall = el?.className.includes("bg-gray-300");
     dragActionRef.current = isWall ? "normal" : "wall";
@@ -63,6 +68,7 @@ export function Grid({
   };
 
   const handleGridMouseUp = () => {
+    if (isNavigationRunningRef.current) return;
     setIsMouseDown(false);
     lastTileRef.current = null;
     dragActionRef.current = null;
@@ -80,11 +86,11 @@ export function Grid({
   };
 
   function drawToggle(row: number, col: number) {
-    const id = `${row}-${col}`;
-    if (wallSetRef.current.has(id)) return;
-    wallSetRef.current.add(id);
+    const key = `${row}-${col}`;
+    if (wallSetRef.current.has(key)) return;
+    wallSetRef.current.add(key);
     if (checkIfStartOrEnd(row, col)) return;
-    const el = document.getElementById(id);
+    const el = document.getElementById(key);
     if (!el) return;
     if (dragActionRef.current === "wall") {
       el.className = twMerge(
@@ -102,7 +108,7 @@ export function Grid({
   }
 
   const handleGridMouseMove = (e: React.MouseEvent) => {
-    if (!isMouseDown || isNavigationRunningRef.current) return;
+    if (isNavigationRunningRef.current || !isMouseDown) return;
     const indices = getTileIndices(e);
     if (!indices || checkIfStartOrEnd(indices.row, indices.col)) return;
     const last = lastTileRef.current;
@@ -113,16 +119,11 @@ export function Grid({
     lastTileRef.current = indices;
   };
 
-  // **NEW**: disable pointer events while animating
-  const gridPointerClass = isNavigationRunningRef.current
-    ? "pointer-events-none"
-    : "";
-
   return (
     <div
       className={twMerge(
         "flex items-center flex-col justify-center border-sky-300 mt-10",
-        gridPointerClass,
+        wrapperPointerClass,
         `lg:min-h-[${maxRows * 22}px] md:min-h-[${maxRows * 18}px] xs:min-h-[${
           maxRows * 11
         }px] min-h-[${maxRows * 9}px]`,

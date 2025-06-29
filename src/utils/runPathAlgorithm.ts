@@ -1,23 +1,47 @@
+// src/utils/runPathAlgorithm.ts
 import { bfs } from "../lib/algo/pathnavigating/bfs";
-import { startTileStyle } from "./constants";
-import type { AlgorithmType, GridType, TileType } from "./types";
+import { animatePath } from "./animatePath";
+import type { AlgorithmType, GridType, SpeedType, TileType } from "./types";
 
-export const runPathAlgorithm = ({
-    algorithm,
-    grid,
-    startTile,
-    endTile,
+/**
+ * Runs the selected pathfinding algorithm, animates its traversal+path,
+ * and only resolves once *all* CSS animations have finished.
+ */
+export async function runPathAlgorithm({
+  algorithm,
+  grid,
+  startTile,
+  endTile,
+  speed,
 }: {
-        algorithm: AlgorithmType;
-        grid: GridType;
-        startTile: TileType;
-        endTile: TileType;
-}) => {
-    
-    switch (algorithm) {
-        case "BFS":
-            return bfs(grid, startTile, endTile);
-        default:
-            return bfs(grid, startTile, endTile); // Default to BFS if no valid algorithm is provided
-    }
+  algorithm: AlgorithmType;
+  grid: GridType;
+  startTile: TileType;
+  endTile: TileType;
+  speed: SpeedType;
+}): Promise<void> {
+  let result: { traversedTiles: TileType[]; path: TileType[] } | null = null;
+
+  switch (algorithm) {
+    case "BFS":
+      result = bfs(grid, startTile, endTile);
+      break;
+    // case "Dijkstra":
+    //   result = dijkstra(grid, startTile, endTile);
+    //   break;
+    // case "AStar":
+    //   result = aStar(grid, startTile, endTile);
+    //   break;
+    // case "DFS":
+    //   result = dfs(grid, startTile, endTile);
+    //   break;
+    default:
+      result = bfs(grid, startTile, endTile);
+  }
+
+  if (!result) return;
+  const { traversedTiles, path } = result;
+
+  // This Promise only resolves after the last CSS animation ends
+  await animatePath(traversedTiles, path, startTile, endTile, speed);
 }
