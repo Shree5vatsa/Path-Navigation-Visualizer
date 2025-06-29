@@ -32,8 +32,8 @@ export const dijkstra = (grid: GridType, startTile: TileType, endTile: TileType)
     }
     const path = [];
     let current: TileType | null = grid[endTile.row][endTile.col];
-    while (current != null) {
-        current.isPath == true;
+    while (current !== null) {
+        current.isPath = true;
         path.unshift(current);
         current = current.parent;
     }
