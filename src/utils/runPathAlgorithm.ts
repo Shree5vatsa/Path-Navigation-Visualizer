@@ -1,5 +1,6 @@
 // src/utils/runPathAlgorithm.ts
 import { bfs } from "../lib/algo/pathnavigating/bfs";
+import { dfs } from "../lib/algo/pathnavigating/dfs";
 import { animatePath } from "./animatePath";
 import type { AlgorithmType, GridType, SpeedType, TileType } from "./types";
 
@@ -26,15 +27,9 @@ export async function runPathAlgorithm({
     case "BFS":
       result = bfs(grid, startTile, endTile);
       break;
-    // case "Dijkstra":
-    //   result = dijkstra(grid, startTile, endTile);
-    //   break;
-    // case "AStar":
-    //   result = aStar(grid, startTile, endTile);
-    //   break;
-    // case "DFS":
-    //   result = dfs(grid, startTile, endTile);
-    //   break;
+    case "DFS":
+      result = dfs(grid, startTile, endTile);
+      break;
     default:
       result = bfs(grid, startTile, endTile);
   }
