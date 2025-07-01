@@ -31,13 +31,13 @@ export async function runPathAlgorithm({
       break;
     case "DFS":
       result = dfs(grid, startTile, endTile);
-          break;
+      break;
     case "Dijkstra":
       result = dijkstra(grid, startTile, endTile);
-          break;
+      break;
     case "AStar":
-          result = aStar(grid, startTile, endTile);
-          break;
+      result = aStar(grid, startTile, endTile);
+      break;
     default:
       result = bfs(grid, startTile, endTile);
   }
