@@ -11,6 +11,7 @@ import { AuthorCredits } from "./components/AuthorCredits";
 import { useToast } from "./hooks/useToast";
 import { Grid } from "./components/Grid";
 
+
 function AppContent() {
   const isNavigationRunningRef = useRef(false);
   const { toast, hideToast } = useToast();
