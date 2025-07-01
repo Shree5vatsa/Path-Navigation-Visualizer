@@ -1,6 +1,6 @@
 # PathAlgo-Navigator
 
-Hey there! 👋 Welcome to PathAlgo-Navigator — a project I built to make learning pathfinding and maze algorithms fun, visual, and interactive. If you've ever wondered how algorithms like Dijkstra or A* actually work, or just want to play with mazes, you're in the right place!
+Hello! My name is Shreevatsa Acharya. Welcome to PathAlgo-Navigator — a project I built to make learning pathfinding and maze algorithms fun, visual, and interactive. If you've ever wondered how algorithms like Dijkstra or A* actually work, or just want to play with mazes, you're in the right place!
 
 ---
 
