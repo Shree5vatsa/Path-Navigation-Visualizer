@@ -9,7 +9,7 @@ import { Legend } from "./components/Legend";
 import { Toast } from "./components/Toast";
 import { AuthorCredits } from "./components/AuthorCredits";
 import { useToast } from "./hooks/useToast";
-import { Grid } from "./components/Grid";
+import { Grid } from './components/Grid';
 
 
 function AppContent() {
