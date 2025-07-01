@@ -1,7 +1,6 @@
-import { SPEEDS, tileStyle } from "./constants";
+import { SPEED_MULTIPLIERS, tileStyle } from "./constants";
 import { sleep } from "./helpers";
 import type { GridType, SpeedType } from "./types";
-
 
 export const destroyWall = async (
   grid: GridType,
@@ -10,17 +9,28 @@ export const destroyWall = async (
   isRight: number,
   speed: SpeedType
 ) => {
+  const delay = SPEED_MULTIPLIERS.WALL_DESTRUCTION[speed];
+
   if (isRight && grid[row][col + 1]) {
     grid[row][col + 1].isWall = false;
-    document.getElementById(`${row}-${col + 1}`)!.className = tileStyle;
-    await sleep(20 * SPEEDS.find((s) => s.value === speed)!.value - 5);
+    const element = document.getElementById(`${row}-${col + 1}`);
+    if (element) {
+      element.className = tileStyle;
+    }
+    await sleep(delay);
   } else if (grid[row + 1]) {
     grid[row + 1][col].isWall = false;
-    document.getElementById(`${row + 1}-${col}`)!.className = tileStyle;
-    await sleep(20 * SPEEDS.find((s) => s.value === speed)!.value - 5);
+    const element = document.getElementById(`${row + 1}-${col}`);
+    if (element) {
+      element.className = tileStyle;
+    }
+    await sleep(delay);
   } else {
     grid[row][col].isWall = false;
-    document.getElementById(`${row}-${col}`)!.className = tileStyle;
-    await sleep(20 * SPEEDS.find((s) => s.value === speed)!.value - 5);
+    const element = document.getElementById(`${row}-${col}`);
+    if (element) {
+      element.className = tileStyle;
+    }
+    await sleep(delay);
   }
 };

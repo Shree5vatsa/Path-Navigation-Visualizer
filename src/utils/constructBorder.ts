@@ -2,7 +2,6 @@ import { maxCols, maxRows, SLEEP_TIME, wallTileStyle } from "./constants";
 import { isEqual, sleep } from "./helpers";
 import type { GridType, TileType } from "./types";
 
-
 export async function constructBorder(
   grid: GridType,
   startTile: TileType,

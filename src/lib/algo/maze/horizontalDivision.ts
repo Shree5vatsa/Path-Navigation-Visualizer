@@ -1,5 +1,5 @@
 // src/lib/algo/maze/horizontalDivision.ts
-import { SPEEDS, wallTileStyle } from "../../../utils/constants";
+import { SPEED_MULTIPLIERS, wallTileStyle } from "../../../utils/constants";
 import { getRandInt, isEqual, sleep } from "../../../utils/helpers";
 import type { GridType, SpeedType, TileType } from "../../../utils/types";
 import recursiveDivision from "./recursiveDivision";
@@ -25,6 +25,14 @@ export async function horizontalDivision({
   setIsDisabled: (d: boolean) => void;
   speed: SpeedType;
 }) {
+  const delay = SPEED_MULTIPLIERS.WALL_DESTRUCTION[speed] * 0.5;
+  const animationClass =
+    speed === 0.5
+      ? "animate-wall-fast"
+      : speed === 2
+      ? "animate-wall-slow"
+      : "animate-wall";
+
   // choose a wall-row at an odd offset
   const wallRow = row + getRandInt(0, height - 2) * 2 + 1;
   // choose exactly one column (even offset) to leave open
@@ -39,10 +47,11 @@ export async function horizontalDivision({
       !isEqual(grid[wallRow][c], endTile)
     ) {
       grid[wallRow][c].isWall = true;
-      document.getElementById(
-        `${wallRow}-${c}`
-      )!.className = `${wallTileStyle} animate-wall`;
-      await sleep(10 * SPEEDS.find((s) => s.value === speed)!.value - 5);
+      const element = document.getElementById(`${wallRow}-${c}`);
+      if (element) {
+        element.className = `${wallTileStyle} ${animationClass}`;
+      }
+      await sleep(delay);
     }
   }
 

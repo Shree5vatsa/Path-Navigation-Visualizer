@@ -122,7 +122,7 @@ export function Grid({
   return (
     <div
       className={twMerge(
-        "flex items-center flex-col justify-center border-sky-300 mt-10",
+        "flex items-center flex-col justify-center border-sky-300 mt-5",
         wrapperPointerClass,
         `lg:min-h-[${maxRows * 22}px] md:min-h-[${maxRows * 18}px] xs:min-h-[${
           maxRows * 11

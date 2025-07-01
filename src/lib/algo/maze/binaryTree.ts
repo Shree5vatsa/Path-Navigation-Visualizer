@@ -1,9 +1,8 @@
-import { maxRows,maxCols } from "../../../utils/constants";
+import { maxRows, maxCols } from "../../../utils/constants";
 import { createWall } from "../../../utils/createWall";
 import { destroyWall } from "../../../utils/destroyWall";
 import { getRandInt, isEqual, sleep } from "../../../utils/helpers";
 import type { GridType, SpeedType, TileType } from "../../../utils/types";
-
 
 export const binaryTree = async (
   grid: GridType,
@@ -50,5 +49,3 @@ export const binaryTree = async (
   }
   setIsDisabled(false); // Re-enable the UI
 };
-
-
