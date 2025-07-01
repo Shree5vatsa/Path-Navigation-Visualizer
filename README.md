@@ -25,19 +25,21 @@ Clone the repo and install dependencies:
 
 ```bash
 git clone https://github.com/Shree5vatsa/Path-Navigation-Visualizer
-cd pathalgo-navigator
+cd Path-Navigation-Visualizer
 npm install
 ```
 
 Running the App
 
-- For development, just run:
-  ``bash
-  npm run dev
-  ```
-- To see a production build preview:
-  ``bash
-  npm run preview
+For development, just run:
+```bash
+npm run dev
+```
+
+To see a production build preview:
+```bash
+npm run preview
+```
 
 Open your browser to the local address it gives you, and you're set!
 
