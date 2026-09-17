@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Path Navigation Visualizer — Technical Interview Study Guide</title>
+  <meta name="description" content="Deep technical study guide for the Path Navigation Visualizer project — algorithms, architecture, data structures, animation engine, and interview Q&A." />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#f8f9fa;--surface:#fff;--surface-subtle:#f1f3f5;--border:#dee2e6;--text:#212529;--muted:#6c757d;--primary:#1971c2;--accent:#2f9e44;--warning:#e67700;--danger:#c92a2a;--purple:#6741d9;--radius:8px;--sw:290px;--code-bg:#f8f9fa}
+    [data-theme="dark"]{--bg:#0d1117;--surface:#161b22;--surface-subtle:#1c2128;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--primary:#58a6ff;--accent:#3fb950;--warning:#d29922;--danger:#f85149;--code-bg:#161b22}
+    *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+    body{font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.75;color:var(--text);background:var(--bg)}
+    #sidebar{position:fixed;top:0;left:0;width:var(--sw);height:100vh;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+    .brand{padding:20px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:10}
+    .brand h2{font-size:15px;font-weight:700;color:var(--primary)}
+    .theme-toggle{background:var(--surface-subtle);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;color:var(--text);font-family:inherit}
+    .search-box{margin:10px 14px;padding:8px 12px;background:var(--surface-subtle);border:1px solid var(--border);border-radius:6px;width:calc(100% - 28px);font-family:inherit;font-size:13px;color:var(--text);outline:none}
+    .search-box:focus{border-color:var(--primary)}
+    .nav-list{list-style:none;padding:4px 8px 20px;flex:1}
+    .nav-list li a{display:block;padding:6px 10px;font-size:13px;color:var(--muted);text-decoration:none;border-radius:5px;transition:all .15s}
+    .nav-list li a:hover{background:var(--surface-subtle);color:var(--text)}
+    .nav-list li a.active{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);font-weight:600}
+    #content{margin-left:var(--sw);padding:48px 60px 80px;max-width:calc(var(--sw) + 900px)}
+    h1{font-size:30px;font-weight:700;margin-bottom:8px;letter-spacing:-.5px}
+    .subtitle{font-size:15px;color:var(--muted);margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+    section{margin-bottom:60px}
+    h2{font-size:22px;font-weight:700;color:var(--primary);margin-top:36px;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid color-mix(in srgb,var(--primary) 20%,transparent)}
+    h3{font-size:17px;font-weight:600;margin-top:28px;margin-bottom:10px}
+    h4{font-size:15px;font-weight:600;color:var(--primary);margin-top:20px;margin-bottom:8px}
+    p{margin-bottom:16px}ul,ol{margin-bottom:18px;padding-left:24px}li{margin-bottom:8px;line-height:1.7}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin:20px 0}
+    .card.callout{border-left:4px solid var(--primary);background:color-mix(in srgb,var(--primary) 4%,var(--surface))}
+    .card.key-takeaway{border-left:4px solid var(--accent);background:color-mix(in srgb,var(--accent) 4%,var(--surface))}
+    .card.warning{border-left:4px solid var(--warning);background:color-mix(in srgb,var(--warning) 4%,var(--surface))}
+    .card.danger{border-left:4px solid var(--danger);background:color-mix(in srgb,var(--danger) 4%,var(--surface))}
+    .card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .card.callout .card-title{color:var(--primary)}.card.key-takeaway .card-title{color:var(--accent)}.card.warning .card-title{color:var(--warning)}.card.danger .card-title{color:var(--danger)}
+    .table-container{overflow-x:auto;margin:24px 0;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:12px 16px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+    th{background:var(--surface-subtle);font-weight:600;font-size:13px}
+    tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface-subtle)}
+    pre{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;margin:18px 0}
+    code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--code-bg);padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--primary)}
+    pre code{background:none;padding:0;border:none;color:var(--text)}
+    .flow-diagram{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.5;overflow-x:auto;margin:18px 0;white-space:pre}
+    .qa-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;transition:border-color .2s}
+    .qa-item.active{border-color:var(--primary)}
+    .qa-question{padding:18px 22px;font-weight:600;font-size:15px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;gap:16px}
+    .qa-question:hover{background:var(--surface-subtle)}
+    .qa-icon{font-size:12px;transition:transform .2s;flex-shrink:0;color:var(--muted)}
+    .qa-item.active .qa-icon{transform:rotate(180deg)}
+    .qa-answer{padding:0 22px 22px;display:none;border-top:1px solid var(--border);font-size:14.5px;line-height:1.8}
+    .qa-item.active .qa-answer{display:block}.qa-answer p{margin-top:14px}
+    .step-block{display:flex;gap:16px;margin-bottom:20px;align-items:flex-start}
+    .step-num{flex-shrink:0;width:32px;height:32px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+    .step-content{flex:1}.step-content strong{display:block;margin-bottom:4px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+    .badge-blue{background:color-mix(in srgb,var(--primary) 15%,transparent);color:var(--primary)}
+    .badge-green{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
+    .badge-orange{background:color-mix(in srgb,var(--warning) 15%,transparent);color:var(--warning)}
+    .badge-red{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger)}
+    .badge-purple{background:color-mix(in srgb,var(--purple) 15%,transparent);color:var(--purple)}
+    .algo-compare td:first-child{font-weight:600}
+    @media(max-width:900px){#sidebar{display:none}#content{margin-left:0;padding:24px 20px 60px}}
+  </style>
+</head>
+<body>
+<aside id="sidebar">
+  <div class="brand"><h2>&#x1F9ED; Path Visualizer</h2><button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">&#x1F319; Dark</button></div>
+  <input type="text" class="search-box" id="searchBox" placeholder="Search topics..." oninput="filterTopics()"/>
+  <ul class="nav-list" id="navList">
+    <li><a href="#ch1">1. Project Overview</a></li>
+    <li><a href="#ch2">2. Tech Stack & Architecture</a></li>
+    <li><a href="#ch3">3. Core Data Model</a></li>
+    <li><a href="#ch4">4. Pathfinding Algorithms</a></li>
+    <li><a href="#ch4a">&nbsp;&nbsp;&#x21B3; BFS — Breadth-First Search</a></li>
+    <li><a href="#ch4b">&nbsp;&nbsp;&#x21B3; DFS — Depth-First Search</a></li>
+    <li><a href="#ch4c">&nbsp;&nbsp;&#x21B3; Dijkstra's Algorithm</a></li>
+    <li><a href="#ch4d">&nbsp;&nbsp;&#x21B3; A* Search Algorithm</a></li>
+    <li><a href="#ch4e">&nbsp;&nbsp;&#x21B3; Algorithm Comparison</a></li>
+    <li><a href="#ch5">5. Maze Generation</a></li>
+    <li><a href="#ch5a">&nbsp;&nbsp;&#x21B3; Binary Tree Algorithm</a></li>
+    <li><a href="#ch5b">&nbsp;&nbsp;&#x21B3; Recursive Division</a></li>
+    <li><a href="#ch6">6. Animation Engine</a></li>
+    <li><a href="#ch6a">&nbsp;&nbsp;&#x21B3; Delta-Time Frame Loop</a></li>
+    <li><a href="#ch6b">&nbsp;&nbsp;&#x21B3; Live Speed Switching</a></li>
+    <li><a href="#ch7">7. React State Architecture</a></li>
+    <li><a href="#ch7a">&nbsp;&nbsp;&#x21B3; Context Providers</a></li>
+    <li><a href="#ch7b">&nbsp;&nbsp;&#x21B3; SpeedRef Pattern</a></li>
+    <li><a href="#ch8">8. Grid & Interaction System</a></li>
+    <li><a href="#ch9">9. CSS Animation System</a></li>
+    <li><a href="#ch10">10. Key Engineering Decisions</a></li>
+    <li><a href="#ch11">11. Interview Q&amp;A Bank</a></li>
+    <li><a href="#ch12">12. Glossary</a></li>
+  </ul>
+</aside>
+
+<main id="content">
+<h1>Path Navigation Visualizer &mdash; Technical Interview Study Guide</h1>
+<p class="subtitle">Every algorithm, every engineering decision, every design pattern &mdash; explained at maximum depth for interview rounds. Nothing skipped.</p>
+
+<!-- CH1 -->
+<section id="ch1">
+<h2>Chapter 1: Project Overview &mdash; What Is This and Why Does It Matter?</h2>
+<h3>What You Built</h3>
+<p>Path Navigation Visualizer is a fully interactive, browser-based algorithm visualization platform built in React + TypeScript (Vite). It lets users visually explore and compare four pathfinding algorithms and two maze generation algorithms on a live 2D grid, with complete interactive wall-drawing and real-time animation speed control.</p>
+<div class="card key-takeaway">
+  <div class="card-title">&#x1F4A1; Elevator Pitch for Interviewers</div>
+  <p><strong>"I built a real-time pathfinding and maze-generation visualizer in React + TypeScript. The core challenge was building a 60fps animation engine that could display thousands of cell state changes smoothly without blocking the UI thread. I implemented four pathfinding algorithms (BFS, DFS, Dijkstra's, and A*) and two maze generators (Binary Tree and Recursive Division), all with a live speed-control system that lets users change animation speed mid-flight using React refs to bypass re-render latency."</strong></p>
+</div>
+
+<h3>What Makes This Technically Non-Trivial</h3>
+<ul>
+  <li><strong>Scale:</strong> Default grid is 47×87 = 4,089 cells. A full maze generation or pathfinding run touches every single one.</li>
+  <li><strong>Performance:</strong> Animating 4,000+ DOM mutations per second without <code>requestAnimationFrame</code> or batch-rendering would freeze the browser entirely.</li>
+  <li><strong>Live Speed Control:</strong> Speed changes must take effect on the very next animation frame, not after the current animation finishes &mdash; requiring a React ref pattern to bypass the re-render cycle.</li>
+  <li><strong>Algorithm Correctness:</strong> A* requires Manhattan distance heuristics and a two-table f(n) = g(n) + h(n) cost model. Getting wrong grid indices would silently return incorrect paths.</li>
+  <li><strong>Touch + Mouse:</strong> Wall-drawing works on both mouse (drag) and touch (mobile swipe) with Bresenham-style linear interpolation to fill gaps from fast swipes.</li>
+</ul>
+
+<h3>Feature List</h3>
+<ul>
+  <li>4 pathfinding algorithms: BFS, DFS, Dijkstra's, A*</li>
+  <li>2 maze generators: Binary Tree (NE-bias), Recursive Division (chamber splitting)</li>
+  <li>Interactive wall drawing (click+drag) and erasing</li>
+  <li>Configurable grid sizes (9×17 Mini up to 65×105 custom)</li>
+  <li>Live mid-animation speed control (Slow / Medium / Fast) with zero stutter</li>
+  <li>Distinct SpeedControl component with animated SVG tachometer gauge</li>
+  <li>Toast notification system for user feedback</li>
+  <li>Responsive layout (mobile + desktop)</li>
+  <li>Color-coded Legend and Author Credits footer</li>
+</ul>
+</section>
+
+<!-- CH2 -->
+<section id="ch2">
+<h2>Chapter 2: Tech Stack &amp; Architecture</h2>
+<h3>Full Tech Stack</h3>
+<div class="table-container"><table>
+  <thead><tr><th>Layer</th><th>Technology</th><th>Why Chosen</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Framework</strong></td><td>React 18 + Vite</td><td>Component model for stateful grid, Vite for instant HMR dev loop</td></tr>
+    <tr><td><strong>Language</strong></td><td>TypeScript</td><td>Type-safe grid indices, tile properties, and algorithm contracts</td></tr>
+    <tr><td><strong>Styling</strong></td><td>Tailwind CSS v4 + vanilla CSS</td><td>Utility classes for grid layout; vanilla <code>@keyframes</code> for GPU-accelerated animations</td></tr>
+    <tr><td><strong>State Management</strong></td><td>React Context API + useRef</td><td>Context for slow global state; refs for zero-lag live speed changes</td></tr>
+    <tr><td><strong>Animation</strong></td><td>Custom <code>requestAnimationFrame</code> engine</td><td>60fps/120fps-synchronized cell rendering; no animation libraries</td></tr>
+    <tr><td><strong>Build Tool</strong></td><td>Vite + tsc</td><td>TypeScript compilation + production bundling</td></tr>
+    <tr><td><strong>CSS Merging</strong></td><td>tailwind-merge</td><td>Conflict-free Tailwind class merging in <code>Grid.tsx</code></td></tr>
+  </tbody>
+</table></div>
+
+<h3>High-Level Architecture</h3>
+<div class="flow-diagram">Browser (React SPA — Vite)
+│
+├── App.tsx  [Root — composes all Context Providers]
+│   ├── PathAlgoProvider  [algorithm, maze, grid, isGraphVisualized]
+│   ├── TileProvider      [startTile, endTile positions]
+│   ├── SpeedProvider     [speed state + speedRef for zero-lag access]
+│   └── ToastProvider     [notification queue]
+│
+├── components/
+│   ├── Nav.tsx           [All controls: Grid Size, Maze, Speed, Algorithm, Clear]
+│   ├── Grid.tsx          [Renders 2D tile grid; handles mouse/touch wall drawing]
+│   ├── tile.tsx          [Individual cell component — reads className from DOM]
+│   ├── SpeedControl.tsx  [Tachometer SVG + segmented pill speed switcher]
+│   ├── Legend.tsx        [Color key in footer]
+│   ├── AuthorCredits.tsx [Footer credits]
+│   ├── Toast.tsx         [Toast notification overlay]
+│   └── GridSizeModal.tsx [Custom grid dimension modal]
+│
+├── lib/algo/
+│   ├── pathnavigating/   [BFS, DFS, Dijkstra, A* — pure synchronous functions]
+│   └── maze/             [binaryTree, recursiveDivision — async animated generators]
+│
+└── utils/
+    ├── helpers.ts        [createGrid, runFrameAnimation, sleep, isEqual, ...]
+    ├── animatePath.ts    [Orchestrates traversal + path animation steps]
+    ├── runPathAlgorithm.ts [Runs algorithm + calls animatePath]
+    ├── runMazeAlgo.ts    [Routes to correct maze generator]
+    ├── constructBorder.ts [Draws outer border before recursive division]
+    ├── heuristics.ts     [Manhattan distance + f(n) cost tables for A*]
+    ├── getuntraversedneighBours.ts [4-directional neighbour lookup]
+    ├── types.ts          [All TypeScript interfaces]
+    └── constants.ts      [Grid sizes, speed presets, tile CSS classes]</div>
+
+<h3>Data Flow: Running a Pathfinding Algorithm</h3>
+<div class="step-block"><div class="step-num">1</div><div class="step-content"><strong>User clicks ▶️ Start in Nav.tsx</strong><p><code>handlerRunVisualizer()</code> is called. It resets all tile traversal states on the grid, then calls <code>runPathAlgorithm({ algorithm, grid, startTile, endTile, speed: speedRef })</code>.</p></div></div>
+<div class="step-block"><div class="step-num">2</div><div class="step-content"><strong>Algorithm runs synchronously</strong><p>The selected algorithm (e.g. <code>bfs(grid, startTile, endTile)</code>) executes entirely in-memory in milliseconds, building two arrays: <code>traversedTiles[]</code> (search order) and <code>path[]</code> (optimal path found by backtracking).</p></div></div>
+<div class="step-block"><div class="step-num">3</div><div class="step-content"><strong>animatePath() streams results</strong><p><code>animatePath(traversedTiles, path, startTile, endTile, speed)</code> creates step callbacks (closures) for every tile and passes them to <code>runFrameAnimation(steps, getRate)</code>.</p></div></div>
+<div class="step-block"><div class="step-num">4</div><div class="step-content"><strong>requestAnimationFrame engine renders</strong><p>The frame loop fires once per monitor refresh. Each frame computes <code>stepsToAdvance = dt / msPerStep</code> using delta-time accumulation, applies exactly that many DOM mutations (className changes), then schedules the next frame.</p></div></div>
+<div class="step-block"><div class="step-num">5</div><div class="step-content"><strong>React state syncs after completion</strong><p>Only after the full animation Promise resolves does <code>setGrid()</code> sync the DOM-mutated tile states back into React state. This prevents thousands of unnecessary re-renders during animation.</p></div></div>
+</section>
+
+<!-- CH3 -->
+<section id="ch3">
+<h2>Chapter 3: Core Data Model &mdash; The TileType Interface</h2>
+<p>Every single cell in the grid is represented by a <code>TileType</code> object. Understanding this interface is the key to understanding every algorithm in the project.</p>
+<pre><code>export type TileType = {
+  row: number;        // 0-indexed row position in the grid
+  col: number;        // 0-indexed column position
+  isStart: boolean;   // Is this the start node? (fixed at [1, 1] by default)
+  isEnd: boolean;     // Is this the goal node? (fixed at [r-2, c-2] by default)
+  isWall: boolean;    // Is this tile blocked? (set by user drawing or maze generator)
+  distance: number;   // Shortest known distance from start (Infinity until visited)
+  parent: TileType | null;  // Pointer to previous tile in optimal path (for backtracking)
+  isPath: boolean;    // Is this tile on the final backtracked path?
+  isTraversed: boolean; // Has this tile been visited by the algorithm?
+};</code></pre>
+
+<div class="card callout">
+  <div class="card-title">&#x1F4CC; Why <code>parent</code> is the Key Field</div>
+  <p>The <code>parent</code> field forms a linked-list backwards from the goal to the start. After any algorithm terminates at the goal, you call <code>path.unshift(curr); curr = curr.parent</code> in a while loop to reconstruct the full optimal path. Without <code>parent</code>, there is no way to trace back the shortest route even if you found the goal.</p>
+</div>
+
+<h3>The Grid Type</h3>
+<pre><code>export type GridType = TileType[][];  // 2D array: grid[row][col]</code></pre>
+<p>Grid dimensions are configurable. The default is <strong>47 rows × 87 columns</strong> (odd numbers chosen so maze rooms and corridors align symmetrically). All algorithms operate on mutable references to this same grid object &mdash; they do not copy it.</p>
+
+<h3>The SpeedType</h3>
+<pre><code>export type SpeedType = 2 | 1 | 0.5;
+// 2   = Slow  (0.5× speed)  — high ms-per-step, slow animation
+// 1   = Medium (1.0× speed) — balanced timing
+// 0.5 = Fast  (2.0× speed)  — low ms-per-step, rapid animation</code></pre>
+<p>This counter-intuitive naming exists because speed originally controlled a sleep interval multiplier: Slow meant waiting 2× longer per step (higher ms), and Fast meant waiting 0.5× as long. The multiplier badges in the SpeedControl component show the inverse (0.5×, 1.0×, 2.0×) to match user mental models ("Fast = 2× speed").</p>
+
+<h3>Tile CSS Class System</h3>
+<div class="table-container"><table>
+  <thead><tr><th>Tile State</th><th>CSS Class</th><th>Visual Color</th></tr></thead>
+  <tbody>
+    <tr><td>Normal (empty)</td><td><code>tileStyle</code></td><td>Transparent / dark grid</td></tr>
+    <tr><td>Start node</td><td><code>startTileStyle</code></td><td>Green (bg-green-400)</td></tr>
+    <tr><td>End/Goal node</td><td><code>endTileStyle</code></td><td>Red (bg-red-400)</td></tr>
+    <tr><td>Wall</td><td><code>wallTileStyle</code></td><td>Light gray (bg-gray-300)</td></tr>
+    <tr><td>Traversed (visited)</td><td><code>traversedTileStyle</code></td><td>Cyan (bg-cyan-400)</td></tr>
+    <tr><td>Final path</td><td><code>pathTileStyle</code></td><td>Green (bg-green-500)</td></tr>
+  </tbody>
+</table></div>
+<p><strong>Key engineering insight:</strong> During animation, tile state is communicated via DOM className mutations directly (<code>element.className = ...</code>), bypassing React's virtual DOM entirely. This is intentional — React re-renders are too slow for 4,000+ updates per second. The DOM is the source of truth during animation; React state catches up afterwards.</p>
+</section>
+
+<!-- CH4 -->
+<section id="ch4">
+<h2>Chapter 4: Pathfinding Algorithms &mdash; Deep Dive</h2>
+<p>All four algorithms follow the same contract: they accept <code>(grid, startTile, endTile)</code>, run synchronously, and return <code>{ traversedTiles, path }</code>.</p>
+
+<section id="ch4a">
+<h3>BFS — Breadth-First Search</h3>
+<p><strong>Data structure:</strong> Queue (FIFO). In JavaScript, this is implemented as a plain array with <code>.push()</code> to enqueue and <code>.shift()</code> to dequeue.</p>
+<p><strong>Core idea:</strong> Visit nodes level by level outward from the start. Because all edge weights are 1 (each grid step costs 1), the first time BFS reaches the goal it is guaranteed to have found the shortest path.</p>
+<pre><code>// BFS core loop (simplified)
+const queue = [startTile];
+while (queue.length) {
+  const tile = queue.shift();       // FIFO — dequeue from front
+  if (tile.isWall) continue;
+  if (tile.distance === Infinity) break;  // Unreachable frontier
+  tile.isTraversed = true;
+  traversedTiles.push(tile);
+  if (isEqual(tile, endTile)) break;   // Goal reached!
+
+  for (const neighbour of getUntraversedNeighbours(grid, tile)) {
+    if (!isPresentInQueue(neighbour, queue)) {
+      neighbour.distance = tile.distance + 1;
+      neighbour.parent = tile;          // Link for backtracking
+      queue.push(neighbour);
+    }
+  }
+}</code></pre>
+<div class="card key-takeaway">
+  <div class="card-title">&#x2714; Why BFS Always Finds Shortest Path on Unweighted Grids</div>
+  <p>BFS explores in expanding concentric "rings" from the start. The first time it touches the goal, it has taken the minimum number of steps because it has exhausted all shorter paths first. This guarantee only holds when all edge weights are equal &mdash; exactly the case on this grid where every step costs 1.</p>
+</div>
+<p><strong>Time Complexity:</strong> O(V + E) where V = grid cells, E = valid edges (≤ 4 per cell).</p>
+<p><strong>Space Complexity:</strong> O(V) for the queue and visited tracking.</p>
+<p><strong>Best for:</strong> Shortest path in unweighted graphs. Most visually satisfying wave-front expansion.</p>
+</section>
+
+<section id="ch4b">
+<h3>DFS — Depth-First Search</h3>
+<p><strong>Data structure:</strong> Stack (LIFO). Implemented with <code>.push()</code> and <code>.pop()</code> on an array.</p>
+<p><strong>Core idea:</strong> Dive as deep as possible along one path before backtracking. This means DFS often finds <em>a</em> path, but almost never the <em>shortest</em> path.</p>
+<pre><code>// DFS core loop (simplified)
+const stack = [startTile];
+while (stack.length) {
+  const tile = stack.pop();    // LIFO — pop from top
+  if (tile.isWall) continue;
+  tile.isTraversed = true;
+  traversedTiles.push(tile);
+  if (isEqual(tile, endTile)) break;
+
+  for (const neighbour of getUntraversedNeighbours(grid, tile)) {
+    if (!checkStack(neighbour, stack)) {
+      neighbour.distance = tile.distance + 1;
+      neighbour.parent = tile;
+      stack.push(neighbour);   // Explore deepest option next
+    }
+  }
+}</code></pre>
+<div class="card warning">
+  <div class="card-title">&#x26A0; DFS Does NOT Guarantee Shortest Path</div>
+  <p>DFS may find a path 3× longer than optimal because it doesn't track all shortest distances — it just plunges forward. The visualization clearly shows this: DFS snakes into one corner first before backtracking. Use BFS or Dijkstra when shortest path matters.</p>
+</div>
+<p><strong>Time Complexity:</strong> O(V + E) — worst case visits every node.</p>
+<p><strong>Space Complexity:</strong> O(V) for the stack (worst case a full column of the grid).</p>
+<p><strong>Best for:</strong> Demonstrating why algorithm choice matters. Maze exploration problems where any path is acceptable.</p>
+</section>
+
+<section id="ch4c">
+<h3>Dijkstra's Algorithm</h3>
+<p><strong>Data structure:</strong> Priority Queue (min-heap). Implemented here with a sorted array — <code>sort((a,b) => a.distance - b.distance)</code> before each dequeue.</p>
+<p><strong>Core idea:</strong> At each step, always process the unvisited node with the smallest cumulative distance from start. This greedy minimum-distance selection guarantees the shortest path even with weighted edges.</p>
+<pre><code>// Dijkstra core loop (simplified)
+const queue = [startTile]; // startTile.distance = 0
+while (queue.length) {
+  queue.sort((a, b) => a.distance - b.distance); // Always pick minimum
+  const tile = queue.shift();
+  if (tile.isWall || tile.distance === Infinity) break;
+  tile.isTraversed = true;
+  traversedTiles.push(tile);
+  if (isEqual(tile, endTile)) break;
+
+  for (const neighbour of getUntraversedNeighbours(grid, tile)) {
+    if (tile.distance + 1 < neighbour.distance) { // Found shorter path
+      dropNeighbourFromQueue(neighbour, queue);   // Remove old entry
+      neighbour.distance = tile.distance + 1;
+      neighbour.parent = tile;
+      queue.push(neighbour);                       // Re-insert with new distance
+    }
+  }
+}</code></pre>
+<div class="card callout">
+  <div class="card-title">&#x1F4CC; Dijkstra vs BFS on Unweighted Grids</div>
+  <p>On this grid where every step costs exactly 1, Dijkstra and BFS find identical shortest paths. The difference only emerges with weighted edges. Dijkstra's sort step makes it O(V² log V) here vs O(V+E) for BFS, making BFS strictly faster for unweighted grids. Dijkstra is shown because it demonstrates the general principle that scales to weighted road networks, GPS routing, etc.</p>
+</div>
+<p><strong>Time Complexity (with array sort):</strong> O(V² log V) — the sort runs V times.</p>
+<p><strong>With a proper priority queue:</strong> O((V + E) log V).</p>
+</section>
+
+<section id="ch4d">
+<h3>A* Search Algorithm</h3>
+<p>A* is the most sophisticated algorithm in this project. It extends Dijkstra by adding a <em>heuristic</em> — an informed guess about remaining distance — to prioritize nodes that are both close to start AND close to the goal.</p>
+<p><strong>The f(n) = g(n) + h(n) formula:</strong></p>
+<ul>
+  <li><code>g(n)</code> = actual distance traveled from start to node n (same as Dijkstra's <code>distance</code> field)</li>
+  <li><code>h(n)</code> = heuristic estimate of distance from n to goal (Manhattan distance: |row_n - row_goal| + |col_n - col_goal|)</li>
+  <li><code>f(n)</code> = total estimated cost — A* always processes the node with the lowest <code>f(n)</code> first</li>
+</ul>
+<pre><code>// Heuristic: Manhattan Distance
+const retireveheuristicCost = (currentTile, endTile) => {
+  const row = Math.abs(currentTile.row - endTile.row);
+  const col = Math.abs(currentTile.col - endTile.col);
+  return row + col;  // L1 distance — perfect for 4-directional grid
+};
+
+// Pre-compute ALL heuristic costs at start
+const heuristicCost = initHeuristicCost(grid, endTile); // heuristicCost[r][c]
+const functionCost = initFunctionCost(grid);             // f(n) table, init Infinity
+
+// A* core loop
+while (unTraversedTiles.length) {
+  // Sort by f(n) = g(n) + h(n); break ties by preferring larger g(n)
+  unTraversedTiles.sort((a, b) => {
+    if (functionCost[a.row][a.col] === functionCost[b.row][b.col]) {
+      return b.distance - a.distance; // Prefer closer-to-goal nodes on tie
+    }
+    return functionCost[a.row][a.col] - functionCost[b.row][b.col];
+  });
+
+  const current = unTraversedTiles.shift();
+  // ... process neighbours
+  for (const neighbour of getUntraversedNeighbours(grid, current)) {
+    const tentativeG = current.distance + 1;
+    if (tentativeG < neighbour.distance) {
+      neighbour.distance = tentativeG;           // Update g(n)
+      functionCost[neighbour.row][neighbour.col]
+        = tentativeG + heuristicCost[neighbour.row][neighbour.col]; // f = g + h
+      neighbour.parent = current;
+    }
+  }
+}</code></pre>
+<div class="card key-takeaway">
+  <div class="card-title">&#x2728; Why A* Is Faster Than Dijkstra</div>
+  <p>Dijkstra expands uniformly in all directions (it has no idea where the goal is). A* uses the heuristic to "pull" the search towards the goal, dramatically reducing nodes explored. On an open grid, A* often explores less than 30% of the nodes that Dijkstra would. The visualization makes this comparison visually compelling — A* produces a tight, directed search beam vs Dijkstra's disk expansion.</p>
+</div>
+<p><strong>Admissibility condition:</strong> A* finds the optimal path only if the heuristic never overestimates the real remaining cost. Manhattan distance on a 4-directional grid is <em>admissible</em> because the real distance can only be ≥ the Manhattan distance (you can never take fewer steps than the Manhattan distance on a grid).</p>
+</section>
+
+<section id="ch4e">
+<h3>Algorithm Comparison Table</h3>
+<div class="table-container"><table class="algo-compare">
+  <thead><tr><th>Property</th><th>BFS</th><th>DFS</th><th>Dijkstra</th><th>A*</th></tr></thead>
+  <tbody>
+    <tr><td>Data Structure</td><td>Queue (FIFO)</td><td>Stack (LIFO)</td><td>Priority Queue</td><td>Priority Queue</td></tr>
+    <tr><td>Guarantees Shortest Path</td><td>✅ Yes (unweighted)</td><td>❌ No</td><td>✅ Yes (weighted)</td><td>✅ Yes (admissible h)</td></tr>
+    <tr><td>Uses Heuristic</td><td>❌ No</td><td>❌ No</td><td>❌ No</td><td>✅ Yes (h = Manhattan)</td></tr>
+    <tr><td>Nodes Explored (open grid)</td><td>~70-80%</td><td>~90-100%</td><td>~70-80%</td><td>~15-30%</td></tr>
+    <tr><td>Time Complexity</td><td>O(V+E)</td><td>O(V+E)</td><td>O(V² log V)*</td><td>O(V² log V)*</td></tr>
+    <tr><td>Best Use Case</td><td>Unweighted graphs</td><td>Maze exploration</td><td>Weighted graphs</td><td>Grid / GPS routing</td></tr>
+    <tr><td>Animation Pattern</td><td>Expanding rings</td><td>Deep snake dive</td><td>Circular disk</td><td>Directed beam</td></tr>
+  </tbody>
+</table></div>
+<p><em>*With sorted array. A proper min-heap would be O((V+E) log V)</em></p>
+
+<h3>Path Backtracking — Common to All Algorithms</h3>
+<p>Every algorithm uses the same backtracking loop after termination:</p>
+<pre><code>const path = [];
+let curr: TileType | null = grid[endTile.row][endTile.col];
+if (curr.parent || isEqual(curr, startTile)) {  // Only if reachable
+  while (curr != null) {
+    path.unshift(curr);  // prepend: builds path start→goal order
+    curr = curr.parent;  // follow linked list backwards
+  }
+}
+return { traversedTiles, path };</code></pre>
+<p>This works because every algorithm sets <code>neighbour.parent = currentTile</code> when it discovers a better route to a neighbour. The chain of <code>parent</code> pointers from goal back to start is the shortest path.</p>
+</section>
+</section>
+
+<!-- CH5 -->
+<section id="ch5">
+<h2>Chapter 5: Maze Generation Algorithms</h2>
+<p>Both maze generators are <strong>async functions</strong> (unlike pathfinding which is synchronous) because they animate their wall-building process step by step rather than running to completion first.</p>
+
+<section id="ch5a">
+<h3>Binary Tree Maze Algorithm</h3>
+<p>The Binary Tree algorithm creates a maze where every interior "room" (odd-indexed cell) has exactly one open corridor passage going either <strong>North</strong> or <strong>East</strong>. This creates a characteristic bias: every maze generated has a clear horizontal corridor at the top and a clear vertical corridor on the right edge.</p>
+<h4>How It Works — Step by Step</h4>
+<div class="step-block"><div class="step-num">1</div><div class="step-content"><strong>Pre-compute walls entirely in memory first</strong><p>A boolean <code>isWallMap[row][col]</code> is built without touching the DOM. All outer perimeter cells are marked as walls. Even-indexed interior cells become junction pillars (walls by default).</p></div></div>
+<div class="step-block"><div class="step-num">2</div><div class="step-content"><strong>Binary tree decision for each odd-indexed room</strong><p>For each room cell at an odd row AND odd column: randomly choose to carve a passage either East (mark the wall between current and east neighbor as passage → the wall above east neighbor remains) or North (mark wall above current as passage → east wall stays). Edge cases: first row always carves East, last column always carves North.</p></div></div>
+<div class="step-block"><div class="step-num">3</div><div class="step-content"><strong>Collect animation steps</strong><p>Walk the isWallMap, and for every wall cell, push a closure into the <code>steps[]</code> array. Each closure, when executed, calls <code>setWallTile()</code> which sets <code>grid[r][c].isWall = true</code> and updates the DOM element's className.</p></div></div>
+<div class="step-block"><div class="step-num">4</div><div class="step-content"><strong>Stream through animation engine</strong><p><code>await runFrameAnimation(steps, getRate)</code> plays back these closures at the configured speed. After completion, a CSS buffer sleep waits for keyframe animations to finish, then <code>setIsDisabled(false)</code> unlocks the UI.</p></div></div>
+<pre><code>// Binary Tree: North/East carving logic
+for (let r = 1; r < numRows - 1; r += 2) {      // Odd rows only
+  for (let c = 1; c < numCols - 1; c += 2) {    // Odd cols only
+    const isFirstRow = r === 1;
+    const isLastCol = c === numCols - 2;
+
+    let carveEast: boolean;
+    if (isFirstRow) carveEast = true;             // Top row: always East
+    else if (isLastCol) carveEast = false;        // Right col: always North
+    else carveEast = getRandInt(0, 1) === 1;      // Random elsewhere
+
+    if (carveEast) {
+      if (r > 1) isWallMap[r - 1][c] = true;     // North wall stays, east opens
+    } else {
+      if (c + 1 < numCols - 1) isWallMap[r][c + 1] = true; // East wall stays, north opens
+    }
+  }
+}</code></pre>
+<p><strong>Characteristic bias:</strong> Every Binary Tree maze has a "highway" row at the top and a "highway" column on the right — these are always open corridors because the edge rooms can only carve one direction.</p>
+</section>
+
+<section id="ch5b">
+<h3>Recursive Division Maze Algorithm</h3>
+<p>Recursive Division starts with an empty open grid and recursively divides chambers with walls, leaving one "door" gap in each wall. The result is a maze with long straight corridors and clear rectangular rooms.</p>
+<h4>How It Works</h4>
+<div class="step-block"><div class="step-num">1</div><div class="step-content"><strong>Draw border walls</strong><p>Trace the four outer edges clockwise (Top → Right → Bottom → Left) adding wall steps for each perimeter cell.</p></div></div>
+<div class="step-block"><div class="step-num">2</div><div class="step-content"><strong>Recursively divide the interior</strong><p>The <code>divide(row, col, height, width)</code> function picks a random wall line (horizontal if height > width, vertical otherwise), picks a random gap cell as the "door", walls everything on that line except the door, then recurses into both sub-chambers.</p></div></div>
+<div class="step-block"><div class="step-num">3</div><div class="step-content"><strong>Base case</strong><p>When a chamber is too small (height < 2 or width < 2), the recursion stops. This guarantees the algorithm always terminates.</p></div></div>
+<pre><code>function divide(row, col, height, width) {
+  if (height < 2 || width < 2) return;  // Base case
+
+  if (height > width) {
+    // Horizontal wall line
+    const wallRow = row + getRandInt(0, height - 2) * 2 + 1;
+    const passageCol = col + getRandInt(0, width - 1) * 2;  // Door gap
+    for (let x = 0; x < 2 * width - 1; x++) {
+      if (col + x === passageCol) continue;  // Leave the door open
+      addWallStep(wallRow, col + x);          // Wall every other cell
+    }
+    divide(row, col, (wallRow - row + 1) / 2, width);            // Top half
+    divide(wallRow + 1, col, height - (wallRow - row + 1)/2, width); // Bottom half
+  } else {
+    // Vertical wall line (mirror logic)
+    ...
+  }
+}</code></pre>
+<div class="card callout">
+  <div class="card-title">&#x1F4CC; Key Difference: Recursive Division vs Binary Tree</div>
+  <ul>
+    <li><strong>Binary Tree:</strong> Works bottom-up (decides passage for each room independently). Creates highly biased mazes with clear diagonal shortcuts.</li>
+    <li><strong>Recursive Division:</strong> Works top-down (divides chambers). Creates more balanced, room-like mazes. Slower to animate because Slow/Medium timings were deliberately increased for educational clarity.</li>
+  </ul>
+</div>
+</section>
+</section>
+
+<!-- CH6 -->
+<section id="ch6">
+<h2>Chapter 6: The Animation Engine</h2>
+<p>The animation system is the most technically sophisticated part of this project. It needed to solve three problems simultaneously: smooth 60fps rendering, zero-lag speed changes mid-animation, and correct background-tab behavior.</p>
+
+<section id="ch6a">
+<h3>runFrameAnimation: Delta-Time Accumulator Engine</h3>
+<p>The core function in <code>helpers.ts</code>. All animations — pathfinding traversal, path display, wall generation — flow through here.</p>
+<pre><code>export function runFrameAnimation(
+  steps: (() => void)[],          // Array of DOM mutation callbacks
+  targetOrRate: number | (() => number)  // Fixed ms/step OR live rate getter fn
+): Promise<void> {
+  return new Promise((resolve) => {
+    let currentIndex = 0;
+    let lastTime: number | null = null;
+    let stepAccumulator = 0;       // Fractional step credit across frames
+    const isDynamicRate = typeof targetOrRate === "function";
+
+    const stepToNow = (now: number) => {
+      const dt = Math.max(0, now - lastTime!);   // Delta time in ms
+      lastTime = now;
+
+      // Get current ms-per-step (reads live getter every frame if dynamic)
+      const msPerStep = isDynamicRate
+        ? (targetOrRate as () => number)()       // Called fresh every frame
+        : fixedRateMsPerStep;
+
+      // Accumulate fractional steps from this frame's time budget
+      stepAccumulator += dt / msPerStep;
+
+      // Execute all whole steps that fit in this frame's budget
+      const targetIndex = Math.min(steps.length, Math.floor(stepAccumulator));
+      while (currentIndex < targetIndex) {
+        steps[currentIndex]();
+        currentIndex++;
+      }
+
+      if (currentIndex >= steps.length) complete();
+    };
+
+    const frame = (now: number) => {
+      stepToNow(now);
+      if (!isCompleted) rafId = requestAnimationFrame(frame);
+    };
+
+    // Fallback: advances animation even if RAF is throttled (background tab)
+    const scheduleFallback = () => {
+      fallbackTimer = setTimeout(() => {
+        stepToNow(performance.now());
+        scheduleFallback();
+      }, 30);
+    };
+
+    rafId = requestAnimationFrame(frame);
+    scheduleFallback();
+  });
+}</code></pre>
+
+<h4>Why Delta-Time Accumulation Instead of Fixed Delays?</h4>
+<p>The naive approach to animation would be: <code>for each step: await sleep(msPerStep)</code>. This breaks in two ways:</p>
+<ul>
+  <li>On a 120Hz monitor, the sleep interval is wrong — <code>setTimeout(cb, 16ms)</code> fires at 16ms even if the monitor refreshed at 8.3ms</li>
+  <li>If speed changes mid-animation, you can't change the sleep duration already scheduled</li>
+</ul>
+<p>Delta-time accumulation solves both: each frame, we compute exactly how many steps <em>should</em> have advanced given the actual elapsed real-world milliseconds and the current msPerStep. If a frame took 50ms at 10ms/step, we advance 5 steps. If it took 8ms, we advance 0.8 steps (accumulated fractionally). This produces perfectly smooth, monitor-synchronized animation at any refresh rate.</p>
+</section>
+
+<section id="ch6b">
+<h3>Live Mid-Animation Speed Switching</h3>
+<p>The magic that enables instant speed changes without restarting animation:</p>
+<pre><code>// In SpeedContext.tsx — the ref updates SYNCHRONOUSLY, before React re-renders
+const setSpeed = (newSpeed: SpeedType) => {
+  speedRef.current = newSpeed;   // ← Ref mutates instantly, no re-render cycle
+  setSpeedState(newSpeed);       // ← React state update (async, triggers re-render)
+};
+
+// In Nav.tsx — pass the ref, not the state value
+await runMazeAlgo({ ..., speed: speedRef });     // not: speed: speed
+
+// In binaryTree.ts — the rate getter reads the ref fresh every frame
+const getRate = () => {
+  const s = getSpeed(speed);     // s = speedRef.current (live!)
+  return s === 0.5 ? 0.85 : s === 2 ? 2.6 : 1.35;
+};</code></pre>
+<div class="card key-takeaway">
+  <div class="card-title">&#x26A1; The Pattern: ref for sync-critical values, state for UI</div>
+  <p><code>useState</code> triggers an async re-render — the new value isn't readable by running functions until the next render cycle completes. <code>useRef</code> mutates the <code>.current</code> property synchronously and the updated value is immediately readable by any code that holds a reference to the ref object. By passing <code>speedRef</code> (not <code>speed</code>) to the animation engine, the rate getter reads the live <code>speedRef.current</code> on every single requestAnimationFrame tick. Speed changes take effect in under 16ms.</p>
+</div>
+
+<h3>Animation Class System (3 Speeds × 4 Types = 12 CSS Classes)</h3>
+<div class="table-container"><table>
+  <thead><tr><th>Animation</th><th>Slow</th><th>Medium</th><th>Fast</th><th>Duration Range</th></tr></thead>
+  <tbody>
+    <tr><td>Traversed (visited)</td><td><code>animate-traversed-slow</code></td><td><code>animate-traversed</code></td><td><code>animate-traversed-fast</code></td><td>0.22s – 0.80s</td></tr>
+    <tr><td>Path discovery</td><td><code>animate-path-slow</code></td><td><code>animate-path</code></td><td><code>animate-path-fast</code></td><td>0.30s – 1.10s</td></tr>
+    <tr><td>Wall generation</td><td><code>animate-wall-slow</code></td><td><code>animate-wall</code></td><td><code>animate-wall-fast</code></td><td>0.15s – 0.55s</td></tr>
+    <tr><td>Carve (passage)</td><td><code>animate-carve-slow</code></td><td><code>animate-carve</code></td><td><code>animate-carve-fast</code></td><td>0.14s – 0.50s</td></tr>
+  </tbody>
+</table></div>
+<p>All animations use <code>cubic-bezier(0.2, 0.9, 0.3, 1)</code> — an ease-out curve that gives a fast initial pop and smooth settle. <code>will-change: transform, background-color, border-radius, opacity</code> is declared on all animated elements to force GPU compositing.</p>
+</section>
+</section>
+
+<!-- CH7 -->
+<section id="ch7">
+<h2>Chapter 7: React State Architecture</h2>
+
+<section id="ch7a">
+<h3>Context Provider Hierarchy</h3>
+<pre><code>// App.tsx — Provider nesting order matters!
+&lt;PathAlgoProvider&gt;    // algorithm, maze, grid, isGraphVisualized
+  &lt;TileProvider&gt;      // startTile, endTile positions
+    &lt;SpeedProvider&gt;   // speed value + speedRef
+      &lt;ToastProvider&gt; // notification queue
+        &lt;AppContent /&gt;
+      &lt;/ToastProvider&gt;
+    &lt;/SpeedProvider&gt;
+  &lt;/TileProvider&gt;
+&lt;/PathAlgoProvider&gt;</code></pre>
+
+<div class="table-container"><table>
+  <thead><tr><th>Context</th><th>State It Holds</th><th>Who Reads It</th></tr></thead>
+  <tbody>
+    <tr><td><code>PathAlgoContext</code></td><td><code>algorithm</code>, <code>maze</code>, <code>grid</code>, <code>isGraphVisualized</code></td><td>Nav, Grid</td></tr>
+    <tr><td><code>TileContext</code></td><td><code>startTile</code>, <code>endTile</code></td><td>Nav, Grid, all maze/path utils</td></tr>
+    <tr><td><code>SpeedContext</code></td><td><code>speed</code> (state), <code>setSpeed</code>, <code>speedRef</code> (ref)</td><td>Nav, SpeedControl</td></tr>
+    <tr><td><code>ToastContext</code></td><td><code>toast</code> (message, type, isVisible), <code>showToast</code>, <code>hideToast</code></td><td>Nav, App</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Why Context Over Prop Drilling</h3>
+<p>The grid state, algorithm selection, and tile positions are needed in multiple component layers. Without Context, you'd need to pass props through 3-4 component levels. Context gives any component direct access without intermediate "relay" props that those intermediate components don't themselves use.</p>
+</section>
+
+<section id="ch7b">
+<h3>The isNavigationRunningRef Pattern</h3>
+<p>Another critical ref pattern: <code>isNavigationRunningRef</code> is a <code>MutableRefObject&lt;boolean&gt;</code> passed from App to Nav and Grid.</p>
+<pre><code>// In App.tsx
+const isNavigationRunningRef = useRef(false);
+
+// In Nav.tsx — set before animation, clear after
+isNavigationRunningRef.current = true;   // Block grid interaction
+await runPathAlgorithm(...);             // Animation runs
+isNavigationRunningRef.current = false;  // Re-enable interaction
+
+// In Grid.tsx — check on every pointer event
+const handleGridMouseDown = (e: React.MouseEvent) => {
+  if (isNavigationRunningRef.current) return;  // Block during animation
+  ...
+};</code></pre>
+<p>A ref is used here instead of state because: (1) changing this value does not need to trigger a re-render — we just want Grid's event handlers to know the current status, and (2) refs are synchronously readable from inside async functions like the animation loop, while state updates are asynchronously applied after re-renders.</p>
+</section>
+</section>
+
+<!-- CH8 -->
+<section id="ch8">
+<h2>Chapter 8: Grid &amp; Wall Drawing System</h2>
+<h3>Direct DOM Access Pattern</h3>
+<p>The grid uses an unusual hybrid: React renders the initial grid, but wall drawing and animation both use direct DOM manipulation via <code>document.getElementById(`${row}-${col}`)</code>.</p>
+<p>Every tile element's ID is its grid position: <code>id="23-45"</code> for row 23, column 45. This makes O(1) DOM lookup trivial.</p>
+<h3>Wall Drawing with Linear Interpolation</h3>
+<p>Fast mouse drags can skip multiple cells in one event. Without interpolation, you'd see gaps in drawn walls.</p>
+<pre><code>// Bresenham-style tile interpolation
+function interpolateTiles(from, to) {
+  const dr = to.row - from.row;
+  const dc = to.col - from.col;
+  const steps = Math.max(Math.abs(dr), Math.abs(dc));
+  const tiles = [];
+  for (let i = 1; i <= steps; i++) {
+    tiles.push({
+      row: Math.round(from.row + (dr * i) / steps),
+      col: Math.round(from.col + (dc * i) / steps),
+    });
+  }
+  return tiles;
+}</code></pre>
+<p>This fills in all grid cells between the last known mouse position and the current one, ensuring smooth wall drawing even at high cursor speeds.</p>
+
+<h3>Drag Action Memory</h3>
+<p>The first cell you click determines whether the entire drag draws walls OR erases them:</p>
+<pre><code>// On mousedown — determine drag mode
+const el = document.getElementById(`${row}-${col}`);
+const isWall = el?.className.includes("bg-gray-300");
+dragActionRef.current = isWall ? "normal" : "wall";  // Erase or draw</code></pre>
+<p>This prevents accidental mode switches mid-drag if you move over a wall while drawing or vice versa.</p>
+
+<h3>DOM → React State Sync on mouseup</h3>
+<p>During drawing, only DOM elements are mutated (instant). On <code>mouseup</code>, the grid is synced:</p>
+<pre><code>const handleGridMouseUp = () => {
+  // Read DOM state back into React state
+  const newGrid = grid.map(row => row.map(tile => {
+    const el = document.getElementById(`${tile.row}-${tile.col}`);
+    return { ...tile, isWall: el?.className.includes("bg-gray-300") ?? false };
+  }));
+  setGrid(newGrid);
+};</code></pre>
+</section>
+
+<!-- CH9 -->
+<section id="ch9">
+<h2>Chapter 9: CSS Animation System</h2>
+<h3>The 4 @keyframes Animations</h3>
+<div class="table-container"><table>
+  <thead><tr><th>Name</th><th>Used For</th><th>Color Journey</th><th>Scale Journey</th></tr></thead>
+  <tbody>
+    <tr><td><code>traversed</code></td><td>Visited cells during pathfinding</td><td>Purple → Indigo → Blue → Cyan</td><td>0.35 → 1.15 → 1</td></tr>
+    <tr><td><code>path</code></td><td>Optimal path highlight</td><td>Red → Orange → Amber → Lime → Green</td><td>0.35 → 1.18 → 1</td></tr>
+    <tr><td><code>wall</code></td><td>Maze wall appearance</td><td>Slate → Light gray</td><td>0.35 → 1.08 → 1</td></tr>
+    <tr><td><code>carve</code></td><td>Passage opening (legacy)</td><td>White → Slate → Transparent</td><td>1.15 → 1 → 1</td></tr>
+  </tbody>
+</table></div>
+<p>All animations use <code>cubic-bezier(0.2, 0.9, 0.3, 1)</code> — an "elastic out" easing where the animation starts fast and overshoots slightly (scale > 1) before settling at 1. This gives the characteristic "pop" visual feel.</p>
+<h3>GPU Acceleration</h3>
+<pre><code>.animate-traversed, .animate-path, .animate-wall, .animate-carve {
+  transform-origin: center center;
+  will-change: transform, background-color, border-radius, opacity;
+  transition: none !important;  /* Prevent Tailwind from adding transitions */
+}</code></pre>
+<p><code>will-change</code> tells the browser to promote these elements to their own GPU compositing layer before the animation starts, preventing repaints from affecting the rest of the page.</p>
+</section>
+
+<!-- CH10 -->
+<section id="ch10">
+<h2>Chapter 10: Key Engineering Decisions</h2>
+
+<h3>Decision 1: DOM Mutation Over setState During Animation</h3>
+<div class="card warning">
+  <div class="card-title">&#x1F914; The Alternative (and Why It Fails)</div>
+  <p>The "React way" would be to call <code>setGrid()</code> on every cell change. On a 47×87 grid with BFS, this means 4,089 <code>setState</code> calls, each triggering a full React re-render of the 4,089-cell grid. At 60fps, that's 245,340 re-renders per second — the browser would hang immediately.</p>
+</div>
+<p><strong>The solution:</strong> During animation, bypass React entirely. Mutate the DOM directly and the tile's <code>isTraversed</code>/<code>isWall</code> properties in-place. After animation completes, do one single <code>setGrid()</code> to sync state. This reduces re-renders from 4,089 to 1 per animation run.</p>
+
+<h3>Decision 2: Pre-compute Before Animating</h3>
+<p>Both Binary Tree and BFS/DFS/Dijkstra/A* algorithms run to completion <em>first</em> and produce their full step lists before a single DOM mutation happens. This has two advantages:</p>
+<ul>
+  <li><strong>Separation of concerns:</strong> Algorithm logic is pure and testable without any animation side effects</li>
+  <li><strong>Controllable playback:</strong> The animation engine gets a complete list of steps it can play at any speed, pause, or even reverse (future feature)</li>
+</ul>
+
+<h3>Decision 3: speedRef Bypasses React Re-Render Cycle</h3>
+<p>See Chapter 7b. The key insight: for values that need to be read synchronously from async animation loops, <code>useRef</code> is correct. <code>useState</code> is for values that should trigger UI updates when they change.</p>
+
+<h3>Decision 4: Odd-Dimension Grid for Mazes</h3>
+<pre><code>// In Nav.tsx — force odd dimensions
+if (r % 2 === 0) r += 1;
+if (c % 2 === 0) c += 1;</code></pre>
+<p>Maze generation algorithms (Binary Tree, Recursive Division) model "rooms" at odd indices and "walls" between rooms at even indices. On a 5×5 grid: rooms are at (1,1), (1,3), (3,1), (3,3); walls between them are at (1,2), (2,1), etc. Even-dimension grids break this model, causing walls to appear at the wrong positions.</p>
+
+<h3>Decision 5: Start at (1,1), Goal at (r-2, c-2)</h3>
+<p>Placing start and goal at these positions ensures they are always inside the first and last "rooms" of any generated maze — the perimeter is always a wall, so the start/goal are never blocked by the outer border.</p>
+
+<h3>Decision 6: tailwind-merge for Grid Wrapper</h3>
+<pre><code>import { twMerge } from "tailwind-merge";
+// In Grid.tsx
+className={twMerge(
+  "inline-flex flex-col ...",
+  isNavigationRunningRef.current ? "pointer-events-none" : ""
+)}</code></pre>
+<p>Tailwind classes can conflict (e.g., <code>pointer-events-auto</code> vs <code>pointer-events-none</code>). <code>twMerge</code> resolves these conflicts intelligently, keeping only the last valid class from each Tailwind group.</p>
+</section>
+
+<!-- CH11 -->
+<section id="ch11">
+<h2>Chapter 11: Interview Q&amp;A Bank</h2>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">Why did you choose to bypass React state during animations? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p>React's re-render cycle is designed for UI updates that happen at human interaction speeds — button clicks, form inputs, route changes. At animation speeds (60 frames/second across 4,000+ cells), calling <code>setState</code> for every DOM mutation would trigger thousands of full virtual-DOM diffs and re-renders per second. The browser would completely lock up. Instead, I use direct DOM manipulation (<code>element.className = ...</code>) during animation because: (1) DOM mutations via className changes are GPU-composited and hardware-accelerated, (2) bypassing React's VDOM diff eliminates O(N) reconciliation overhead, and (3) CSS animations handle the visual transitions independently after the className is applied. React state is synced exactly once when animation completes via a single <code>setGrid()</code> call.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">How does live mid-animation speed switching work without restarting the animation? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p>The key is using a React <code>useRef</code> instead of <code>useState</code> for the speed value that the animation engine reads. <code>useRef</code> provides a mutable <code>.current</code> property that is immediately readable by any code holding a reference to the ref object — there is no async re-render cycle. When the user changes speed via the SpeedControl component, <code>speedRef.current</code> is updated synchronously. On the very next <code>requestAnimationFrame</code> tick (within ~16ms), the animation engine's rate getter function calls <code>getSpeed(speed)</code> which reads <code>speedRef.current</code> and returns the new ms-per-step value. The delta-time accumulator immediately adjusts how many cells to animate that frame based on the new rate. No restart, no stutter — just a smooth velocity change.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">Why is A* better than BFS or Dijkstra on this grid? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p>BFS and Dijkstra are "blind" — they expand in all directions equally because they have no information about where the goal is. A* uses a heuristic (Manhattan distance: |row_current - row_goal| + |col_current - col_goal|) to estimate the remaining cost to the goal. This biases the search toward the goal direction, dramatically reducing wasted exploration. On an open 47×87 grid, A* might explore 500-1,000 nodes to find a path, while BFS explores 2,000-3,000. The heuristic is admissible (never overestimates) because on a 4-directional grid, you can never reach the goal in fewer steps than the Manhattan distance — so A* is still guaranteed to find the optimal path. The visual difference is striking: BFS shows a circular wave, A* shows a directed beam toward the goal.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">What is delta-time accumulation and why is it better than setTimeout? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p><code>setTimeout(callback, N)</code> has two problems for animation: (1) it's not synchronized to the monitor's refresh rate, so animations appear choppy at non-60Hz rates; (2) the delay is fixed at call time, so you can't change the speed of an in-flight animation. Delta-time accumulation in <code>requestAnimationFrame</code> solves both. Each frame, I calculate the exact elapsed time since the last frame (<code>dt = now - lastTime</code>), then compute <code>stepsToAdvance = dt / msPerStep</code>. This fractional value accumulates across frames: if a frame took 50ms and msPerStep is 10, we advance 5 steps; if the next frame took 6ms, we advance 0.6 steps (stored as 0.6 in the accumulator). The accumulator means zero wasted time and perfect synchronization with the monitor refresh cycle regardless of whether it's 60Hz, 90Hz, or 120Hz.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">Why does the Binary Tree maze always have a clear top row and right column? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p>It's a fundamental property of the North/East bias carving rule. In the top row (r=1), every room can only carve East (there is no North neighbor inside the grid). In the right column (c = numCols-2), every room can only carve North (there is no East neighbor inside the grid). The result: every room in the top row has an open East corridor connecting it to its East neighbor — forming a continuous horizontal highway. Every room in the right column has an open North corridor — forming a continuous vertical highway on the right edge. This makes Binary Tree mazes trivially easy to solve from top-right to bottom-left but very challenging diagonally. The bias is the tradeoff for the algorithm's O(N) simplicity.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">How does wall drawing handle fast mouse movement without gaps? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p>Mouse events fire discretely — if you drag fast, the cursor may jump from cell (5, 10) to cell (5, 25) in one event. Without handling this, you'd get walls at (5,10) and (5,25) with a gap from (5,11) to (5,24). I solve this with a Bresenham-style linear interpolation function: given the last tile position and the current tile position, it computes all intermediate grid positions along the straight line between them and draws walls at each. The algorithm divides the path into <code>steps = max(|ΔRow|, |ΔCol|)</code> segments and places a wall at each interpolated integer position. This fills every cell even at maximum drag speed.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">Why do mazes require odd grid dimensions? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p>Both Binary Tree and Recursive Division model the maze as rooms at odd-indexed cells and walls/corridors at even-indexed cells. For example, on a 5×5 grid: rooms exist at positions (1,1), (1,3), (3,1), (3,3). The cells at (1,2), (2,1) etc. are "walls between rooms." This two-index grid model requires that the border perimeter is at even indices (0, numRows-1, 0, numCols-1) and the last interior room is at (numRows-2, numCols-2). If numRows is even, the math breaks: the last room and border overlap, causing incorrect wall placement. By enforcing odd dimensions, the grid always has a clean room-wall-room-wall-room pattern from edge to edge.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">What is the time complexity of A* in this implementation? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p>In this implementation, A* uses a plain array sorted before each dequeue: <code>O(V log V)</code> per sort operation, running up to V times, giving <code>O(V² log V)</code> total. For a 47×87 grid (4,089 cells), this is ~4,089² × ~12 ≈ 200 million operations in the theoretical worst case. In practice, A* terminates much earlier because the heuristic prunes most of the search space. A production-grade A* would use a binary min-heap priority queue (<code>O(log V)</code> insert/extract) for <code>O((V + E) log V)</code> total. For this grid size, the array sort approach is acceptable and the code is simpler to read and explain in interviews.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">How does Recursive Division guarantee the maze is always solvable? <span class="qa-icon">▼</span></div>
+  <div class="qa-answer"><p>Every wall line drawn by Recursive Division has exactly one "door" gap — a cell that is deliberately left open. This gap connects the two sub-chambers separated by that wall. Since every chamber division preserves at least one passage, and the algorithm recurses until chambers are too small to divide further, every part of the interior remains connected to every other part through the chain of passage gaps. The perimeter border has no gap (it forms the outer walls), but the start and goal are placed at (1,1) and (r-2, c-2) — always inside the first and last rooms — so they are always reachable through the interior passage network.</p></div>
+</div>
+
+<div class="qa-item" onclick="toggleQA(this)">
+  <div class="qa-question">Walk me through what happens when I click "▶️ Start" on BFS. <span class="qa-icon">▼</span></div>
+  <div class="qa-answer">
+    <p>1. <code>handlerRunVisualizer()</code> in Nav.tsx sets <code>isDisabled = true</code> and <code>isNavigationRunningRef.current = true</code>, blocking grid interaction.</p>
+    <p>2. All tile states (<code>isTraversed, isPath, parent, distance</code>) are reset on the grid object in-memory.</p>
+    <p>3. <code>runPathAlgorithm({ algorithm: "BFS", grid, startTile, endTile, speed: speedRef })</code> is called.</p>
+    <p>4. Inside, <code>bfs(grid, startTile, endTile)</code> runs synchronously — it uses a FIFO queue, sets <code>parent</code> pointers and <code>distance</code> values, and returns <code>{ traversedTiles, path }</code>. This runs in milliseconds regardless of grid size.</p>
+    <p>5. <code>animatePath(traversedTiles, path, startTile, endTile, speedRef)</code> is called. It builds step closures for every tile in <code>traversedTiles</code> and <code>path</code>.</p>
+    <p>6. <code>runFrameAnimation(traversalSteps, getTraversalRate)</code> plays the traversal: each frame, it reads <code>speedRef.current</code> via <code>getTraversalRate()</code>, computes how many cells to animate using delta-time, and mutates their DOM <code>className</code> to add <code>animate-traversed</code> (or -fast/-slow variant).</p>
+    <p>7. After traversal, a short pause, then <code>runFrameAnimation(pathSteps, getPathRate)</code> replays the optimal path in green.</p>
+    <p>8. Once both Promises resolve, <code>setGrid()</code> syncs DOM state into React, <code>setIsGraphVisualized(true)</code> changes the Start button to "Reset", and <code>setIsDisabled(false)</code> re-enables interaction.</p>
+  </div>
+</div>
+</section>
+
+<!-- CH12 -->
+<section id="ch12">
+<h2>Chapter 12: Glossary</h2>
+<div class="table-container"><table>
+  <thead><tr><th>Term</th><th>Definition in Context</th></tr></thead>
+  <tbody>
+    <tr><td><strong>A* (A-Star)</strong></td><td>Pathfinding algorithm combining Dijkstra's actual cost g(n) with a Manhattan distance heuristic h(n) to guide search toward the goal, reducing explored nodes.</td></tr>
+    <tr><td><strong>Admissible Heuristic</strong></td><td>A heuristic that never overestimates the true remaining cost to the goal. Required for A* to guarantee the optimal path. Manhattan distance is admissible on 4-directional grids.</td></tr>
+    <tr><td><strong>BFS</strong></td><td>Breadth-First Search. Explores all cells at distance 1 before distance 2, etc. Guarantees shortest path on unweighted grids. Uses FIFO queue.</td></tr>
+    <tr><td><strong>Binary Tree Maze</strong></td><td>Maze algorithm that independently decides for each interior room whether to carve North or East. Produces mazes with characteristic top-row and right-column highways.</td></tr>
+    <tr><td><strong>CSS will-change</strong></td><td>Property that hints to the browser which CSS properties will animate, promoting the element to its own GPU compositing layer for smoother animations.</td></tr>
+    <tr><td><strong>delta-time (dt)</strong></td><td>The milliseconds elapsed between the current animation frame and the previous one. Used to compute exactly how many animation steps should advance this frame independent of frame rate.</td></tr>
+    <tr><td><strong>DFS</strong></td><td>Depth-First Search. Explores as deeply as possible before backtracking. Uses LIFO stack. Does NOT guarantee shortest path.</td></tr>
+    <tr><td><strong>Dijkstra's Algorithm</strong></td><td>Shortest-path algorithm that always processes the unvisited node with minimum accumulated distance. Guarantees optimal path for weighted or unweighted graphs.</td></tr>
+    <tr><td><strong>DOM Direct Mutation</strong></td><td>Changing element properties (<code>element.className</code>) directly without going through React's virtual DOM. Used during animation for performance.</td></tr>
+    <tr><td><strong>f(n) = g(n) + h(n)</strong></td><td>A*'s evaluation function. g(n) = actual cost from start to n; h(n) = heuristic estimate from n to goal. A* always expands the node with minimum f(n).</td></tr>
+    <tr><td><strong>GridType</strong></td><td>TypeScript type alias for <code>TileType[][]</code> — a 2D array of tile objects representing the full grid.</td></tr>
+    <tr><td><strong>isNavigationRunningRef</strong></td><td>A React ref (boolean) shared between App, Nav, and Grid. Set to true during animations to block all grid pointer events.</td></tr>
+    <tr><td><strong>Manhattan Distance</strong></td><td>Distance metric on a grid: |rowA - rowB| + |colA - colB|. The minimum number of horizontal + vertical steps between two cells. Used as A*'s heuristic.</td></tr>
+    <tr><td><strong>MutableRefObject</strong></td><td>TypeScript type for React refs. Has a <code>.current</code> property that can be read/written synchronously without triggering re-renders.</td></tr>
+    <tr><td><strong>parent pointer</strong></td><td>The <code>parent</code> field on TileType. Points to the previous tile on the optimal path to the current tile. Enables path backtracking after algorithm termination.</td></tr>
+    <tr><td><strong>Recursive Division</strong></td><td>Maze generation algorithm that recursively splits chambers with walls, leaving exactly one passage gap per wall. Produces room-like mazes with long straight corridors.</td></tr>
+    <tr><td><strong>requestAnimationFrame (RAF)</strong></td><td>Browser API that schedules a callback to run before the next display repaint, synchronized to the monitor refresh rate (60Hz/120Hz). Used for all animation in this project.</td></tr>
+    <tr><td><strong>runFrameAnimation</strong></td><td>Core animation engine in helpers.ts. Takes a step array and rate getter, plays them back via RAF using delta-time accumulation.</td></tr>
+    <tr><td><strong>SpeedRef pattern</strong></td><td>Passing <code>speedRef</code> (a ref) instead of <code>speed</code> (state value) to animation functions, so speed changes take effect synchronously within the RAF loop.</td></tr>
+    <tr><td><strong>step accumulator</strong></td><td>A running decimal in the animation engine. Fractional steps from each frame accumulate across frames so no time is wasted, enabling perfectly smooth animation at any refresh rate.</td></tr>
+    <tr><td><strong>tailwind-merge (twMerge)</strong></td><td>Utility that resolves Tailwind class conflicts. E.g., <code>twMerge("pointer-events-auto", "pointer-events-none")</code> → <code>"pointer-events-none"</code>.</td></tr>
+    <tr><td><strong>TileType</strong></td><td>Core TypeScript interface: row, col, isStart, isEnd, isWall, distance, parent, isPath, isTraversed. Every grid cell is a TileType object.</td></tr>
+    <tr><td><strong>traversedTiles</strong></td><td>Array of TileType objects in the order they were visited by the algorithm. Used to animate the search exploration visually.</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+</main>
+
+<script>
+function toggleTheme(){
+  const d = document.documentElement;
+  const dark = d.getAttribute('data-theme') === 'dark';
+  d.setAttribute('data-theme', dark ? '' : 'dark');
+  document.getElementById('themeBtn').textContent = dark ? '🌙 Dark' : '☀️ Light';
+}
+function toggleQA(el){
+  el.classList.toggle('active');
+}
+function filterTopics(){
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  document.querySelectorAll('#navList li').forEach(li => {
+    li.style.display = li.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+// Highlight active section in sidebar on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('#navList a');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(a => a.classList.remove('active'));
+      const match = document.querySelector(`#navList a[href="#${e.target.id}"]`);
+      if (match) match.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -75% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

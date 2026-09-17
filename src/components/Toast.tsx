@@ -17,36 +17,53 @@ export function Toast({
     if (isVisible) {
       const timer = setTimeout(() => {
         onClose();
-      }, 4000); // Increased duration to 4 seconds
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [isVisible, onClose]);
 
   if (!isVisible) return null;
 
-  const bgColor =
+  const accentBorder =
     type === "success"
-      ? "bg-green-500"
+      ? "border-l-emerald-500 shadow-emerald-500/10"
       : type === "error"
-      ? "bg-red-500"
-      : "bg-blue-500";
-  const textColor = "text-white";
+      ? "border-l-rose-500 shadow-rose-500/10"
+      : "border-l-sky-500 shadow-sky-500/10";
+
+  const badgeIcon =
+    type === "success" ? (
+      <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+        ✓
+      </span>
+    ) : type === "error" ? (
+      <span className="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+        ✕
+      </span>
+    ) : (
+      <span className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+        ℹ
+      </span>
+    );
 
   return (
-    <div className="fixed bottom-12 sm:bottom-16 left-3 sm:left-4 right-3 sm:right-auto sm:max-w-md z-50 pointer-events-auto">
+    <div className="fixed bottom-4 left-4 z-50 pointer-events-auto max-w-sm sm:max-w-md w-full animate-slide-in">
       <div
-        className={`${bgColor} ${textColor} px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-xl shadow-2xl animate-slide-in border border-white/20 backdrop-blur-md`}
+        className={`bg-gray-900/90 backdrop-blur-xl border border-gray-700/80 ${accentBorder} border-l-4 rounded-xl shadow-2xl p-3.5 sm:p-4 text-gray-100 flex items-center justify-between gap-3`}
       >
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs sm:text-sm font-medium">{message}</p>
-          <button
-            onClick={onClose}
-            className="text-lg leading-none hover:opacity-75 font-bold flex-shrink-0 p-1"
-            aria-label="Close message"
-          >
-            ×
-          </button>
+        <div className="flex items-center gap-3 min-w-0">
+          {badgeIcon}
+          <p className="text-xs sm:text-sm font-medium leading-snug text-gray-100 truncate">
+            {message}
+          </p>
         </div>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold flex-shrink-0"
+          aria-label="Close message"
+        >
+          ✕
+        </button>
       </div>
     </div>
   );

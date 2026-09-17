@@ -50,20 +50,19 @@ export function GridSizeModal({
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-700/80 rounded-2xl shadow-2xl max-w-md w-full p-5 sm:p-6 text-white space-y-4 relative animate-fade-in"
+        className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl max-w-md w-full p-5 sm:p-6 text-zinc-100 space-y-4 relative animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xl">📐</span>
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-wide">
+            <h2 className="text-base sm:text-lg font-semibold text-zinc-100 tracking-wide">
               Customize Grid Dimensions
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors text-lg leading-none"
+            className="text-zinc-400 hover:text-zinc-100 p-1 rounded-lg hover:bg-zinc-800 transition-colors text-lg leading-none"
             aria-label="Close"
           >
             ✕
@@ -72,7 +71,7 @@ export function GridSizeModal({
 
         {/* Quick Presets */}
         <div>
-          <label className="text-xs text-gray-400 font-semibold block mb-2">
+          <label className="text-xs text-zinc-400 font-medium block mb-2">
             Quick Presets
           </label>
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
@@ -85,11 +84,11 @@ export function GridSizeModal({
                   onClick={() => handlePresetSelect(p.rows, p.cols)}
                   className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center border ${
                     isSelected
-                      ? "bg-sky-600/30 border-sky-400 text-sky-200 shadow-sm"
-                      : "bg-gray-800/80 border-gray-700 text-gray-300 hover:bg-gray-700/80 hover:text-white"
+                      ? "bg-indigo-950/60 border-indigo-500 text-indigo-200 shadow-xs"
+                      : "bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
                   }`}
                 >
-                  <div className="font-bold">{p.rows} × {p.cols}</div>
+                  <div className="font-semibold">{p.rows} × {p.cols}</div>
                   <div className="text-[10px] opacity-75">{p.name.split(" ")[2] || p.name.split(" ")[1] || ""}</div>
                 </button>
               );
@@ -99,14 +98,14 @@ export function GridSizeModal({
 
         {/* Custom Inputs */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-3 bg-gray-950/60 p-3 sm:p-4 rounded-xl border border-gray-800">
+          <div className="space-y-3 bg-zinc-950/80 p-3 sm:p-4 rounded-xl border border-zinc-800">
             {/* Rows Input */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="text-xs sm:text-sm font-medium text-gray-300">
-                  Rows <span className="text-gray-500 font-normal">({MIN_GRID_ROWS} - {MAX_GRID_ROWS})</span>
+                <label className="text-xs sm:text-sm font-medium text-zinc-300">
+                  Rows <span className="text-zinc-500 font-normal">({MIN_GRID_ROWS} - {MAX_GRID_ROWS})</span>
                 </label>
-                <span className="text-xs font-mono font-bold text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/60">
+                <span className="text-xs font-mono font-semibold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">
                   {safeRows}
                 </span>
               </div>
@@ -118,7 +117,7 @@ export function GridSizeModal({
                   step={2}
                   value={safeRows}
                   onChange={(e) => setRows(Number(e.target.value))}
-                  className="flex-1 accent-sky-400 h-1.5 bg-gray-700 rounded-lg cursor-pointer"
+                  className="flex-1 accent-indigo-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
                 />
                 <input
                   type="number"
@@ -130,7 +129,7 @@ export function GridSizeModal({
                     const val = Number(e.target.value);
                     if (!isNaN(val)) setRows(val);
                   }}
-                  className="w-16 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-center text-xs sm:text-sm text-white font-mono focus:border-sky-400 focus:outline-none"
+                  className="w-16 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-center text-xs sm:text-sm text-zinc-100 font-mono focus:border-indigo-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -138,10 +137,10 @@ export function GridSizeModal({
             {/* Columns Input */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="text-xs sm:text-sm font-medium text-gray-300">
-                  Columns <span className="text-gray-500 font-normal">({MIN_GRID_COLS} - {MAX_GRID_COLS})</span>
+                <label className="text-xs sm:text-sm font-medium text-zinc-300">
+                  Columns <span className="text-zinc-500 font-normal">({MIN_GRID_COLS} - {MAX_GRID_COLS})</span>
                 </label>
-                <span className="text-xs font-mono font-bold text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/60">
+                <span className="text-xs font-mono font-semibold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">
                   {safeCols}
                 </span>
               </div>
@@ -153,7 +152,7 @@ export function GridSizeModal({
                   step={2}
                   value={safeCols}
                   onChange={(e) => setCols(Number(e.target.value))}
-                  className="flex-1 accent-cyan-400 h-1.5 bg-gray-700 rounded-lg cursor-pointer"
+                  className="flex-1 accent-indigo-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
                 />
                 <input
                   type="number"
@@ -165,28 +164,28 @@ export function GridSizeModal({
                     const val = Number(e.target.value);
                     if (!isNaN(val)) setCols(val);
                   }}
-                  className="w-16 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-center text-xs sm:text-sm text-white font-mono focus:border-cyan-400 focus:outline-none"
+                  className="w-16 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 text-center text-xs sm:text-sm text-zinc-100 font-mono focus:border-indigo-500 focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Node Coordinates Summary */}
-          <div className="bg-gray-800/60 p-2.5 rounded-xl border border-gray-700/60 flex items-center justify-between text-xs">
+          <div className="bg-zinc-800/60 p-2.5 rounded-xl border border-zinc-700/60 flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-400 ring-2 ring-green-400/30"></span>
-              <span className="text-gray-400">Start:</span>
-              <span className="font-mono font-bold text-green-400">{startPos}</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span className="text-zinc-400">Start:</span>
+              <span className="font-mono font-semibold text-emerald-400">{startPos}</span>
             </div>
-            <div className="h-4 w-[1px] bg-gray-700"></div>
+            <div className="h-4 w-[1px] bg-zinc-700"></div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-400/30"></span>
-              <span className="text-gray-400">Goal:</span>
-              <span className="font-mono font-bold text-red-400">{goalPos}</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+              <span className="text-zinc-400">Goal:</span>
+              <span className="font-mono font-semibold text-rose-400">{goalPos}</span>
             </div>
-            <div className="h-4 w-[1px] bg-gray-700"></div>
-            <div className="text-gray-400">
-              <span className="font-mono text-gray-300">{safeRows * safeCols}</span> tiles
+            <div className="h-4 w-[1px] bg-zinc-700"></div>
+            <div className="text-zinc-400">
+              <span className="font-mono text-zinc-200">{safeRows * safeCols}</span> tiles
             </div>
           </div>
 
@@ -195,13 +194,13 @@ export function GridSizeModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:bg-gray-800 transition-colors"
+              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg hover:shadow-cyan-500/25 transition-all active:scale-95"
+              className="px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs border border-indigo-500 transition-all active:scale-95"
             >
               Apply Dimensions
             </button>

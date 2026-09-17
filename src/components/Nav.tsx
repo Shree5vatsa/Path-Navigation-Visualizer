@@ -250,28 +250,28 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
 
   return (
     <>
-      <header className="bg-gray-900/95 backdrop-blur-md text-white px-3 py-2 sm:px-6 sm:py-2.5 border-b border-gray-800 shadow-xl z-20">
+      <header className="bg-zinc-900 text-zinc-100 px-3 py-2.5 sm:px-6 sm:py-3 border-b border-zinc-800 shadow-sm z-20">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-1.5 sm:mb-2">
-            <h1 className="text-base sm:text-lg md:text-xl font-extrabold tracking-wider bg-gradient-to-r from-blue-400 via-sky-300 to-cyan-400 bg-clip-text text-transparent inline-flex items-center gap-2">
-              <span>🧭</span> PATH NAVIGATION VISUALIZER
+          <div className="text-center mb-2">
+            <h1 className="text-sm sm:text-base md:text-lg font-bold tracking-wide text-zinc-100 inline-flex items-center gap-2">
+              <span className="text-indigo-400 text-base sm:text-xl">🧭</span> PATH NAVIGATION VISUALIZER
             </h1>
           </div>
 
           {/* Responsive Control Ribbon */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4">
             {/* Grid Size Group */}
-            <div className="flex items-center gap-1.5 bg-gray-800/80 p-1 sm:p-1.5 rounded-lg border border-gray-700/60 shadow-inner">
+            <div className="flex items-center gap-1.5 bg-zinc-800/90 p-1 sm:p-1.5 rounded-lg border border-zinc-700/80 shadow-xs">
               <div className="flex flex-col">
-                <label className="text-xs sm:text-sm text-gray-300 font-semibold px-1 flex items-center justify-between gap-1.5">
+                <label className="text-xs text-zinc-300 font-medium px-1 flex items-center justify-between gap-1.5">
                   <span>Grid Size</span>
-                  <span className="text-[10px] sm:text-xs text-sky-400 font-mono font-bold">
+                  <span className="text-[10px] text-indigo-400 font-mono font-semibold">
                     {currentRows}×{currentCols}
                   </span>
                 </label>
                 <select
                   disabled={isDisabled}
-                  className="bg-gray-700/90 text-white px-2 py-1 rounded text-xs sm:text-sm border border-gray-600 focus:border-blue-400 focus:outline-none hover:bg-gray-600 transition-colors max-w-[125px] sm:max-w-[155px]"
+                  className="bg-zinc-900 text-zinc-100 px-2 py-1 rounded text-xs sm:text-sm border border-zinc-700 focus:border-indigo-500 focus:outline-none hover:border-zinc-600 transition-colors max-w-[125px] sm:max-w-[155px]"
                   value={isPresetMatch ? currentKey : "custom"}
                   onChange={(e) => handlePresetChange(e.target.value)}
                 >
@@ -347,21 +347,9 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
                   ))}
                 </select>
               </div>
-              <button
-                disabled={isDisabled}
-                onClick={handlerRunVisualizer}
-                className={`self-end ${
-                  isGraphVisualized
-                    ? "bg-amber-600 hover:bg-amber-500 shadow-amber-500/20"
-                    : "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20"
-                } disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-semibold transition-all shadow flex items-center gap-1 active:scale-95`}
-                title={isGraphVisualized ? "Reset Path" : "Start Pathfinding"}
-              >
-                {isGraphVisualized ? "🔄 Reset" : "▶️ Start"}
-              </button>
             </div>
 
-            {/* Clear Actions */}
+            {/* Primary Actions (Clear Grid on left, Start/Reset as rightmost anchor) */}
             <div className="flex items-center gap-1.5 self-end">
               <button
                 disabled={isDisabled}
@@ -370,6 +358,19 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
                 title="Clear all walls and reset entire grid"
               >
                 🗑️ Clear Grid
+              </button>
+
+              <button
+                disabled={isDisabled}
+                onClick={handlerRunVisualizer}
+                className={`px-3.5 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all shadow-md flex items-center gap-1.5 border active:scale-95 ${
+                  isGraphVisualized
+                    ? "bg-amber-600 hover:bg-amber-500 border-amber-500 text-white shadow-amber-600/30"
+                    : "bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white shadow-emerald-600/30"
+                } disabled:opacity-40 disabled:cursor-not-allowed`}
+                title={isGraphVisualized ? "Reset Path" : "Start Pathfinding"}
+              >
+                {isGraphVisualized ? "🔄 Reset" : "▶️ Start"}
               </button>
             </div>
           </div>
