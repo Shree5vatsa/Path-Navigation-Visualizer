@@ -1,22 +1,26 @@
 import { twMerge } from "tailwind-merge";
 import { usePathAlgo } from "../hooks/usePathAlgo";
-import { maxCols, maxRows, wallTileStyle, tileStyle } from "../utils/constants";
+import { useTile } from "../hooks/useTile";
+import { wallTileStyle, tileStyle } from "../utils/constants";
 import { Tile } from "./tile";
 import { useRef, useState, type MutableRefObject } from "react";
 import { checkIfStartOrEnd } from "../utils/helpers";
 
-function getTileIndices(
-  e: React.MouseEvent
+function getTileIndicesFromPoint(
+  clientX: number,
+  clientY: number,
+  numRows: number,
+  numCols: number
 ): { row: number; col: number } | null {
-  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const el = document.elementFromPoint(clientX, clientY);
   if (!el || !(el instanceof HTMLElement)) return null;
   const [row, col] = el.id.split("-").map(Number);
   return !isNaN(row) &&
     !isNaN(col) &&
     row >= 0 &&
-    row < maxRows &&
+    row < numRows &&
     col >= 0 &&
-    col < maxCols
+    col < numCols
     ? { row, col }
     : null;
 }
@@ -44,10 +48,14 @@ export function Grid({
   isNavigationRunningRef: MutableRefObject<boolean>;
 }) {
   const { grid, setGrid } = usePathAlgo();
+  const { startTile, endTile } = useTile();
   const [isMouseDown, setIsMouseDown] = useState(false);
   const lastTileRef = useRef<{ row: number; col: number } | null>(null);
   const wallSetRef = useRef<Set<string>>(new Set());
   const dragActionRef = useRef<"wall" | "normal" | null>(null);
+
+  const numRows = grid.length;
+  const numCols = grid[0]?.length || 0;
 
   // If navigation is running, we block *all* pointer events on the wrapper DIV
   const wrapperPointerClass = isNavigationRunningRef.current
@@ -56,8 +64,8 @@ export function Grid({
 
   const handleGridMouseDown = (e: React.MouseEvent) => {
     if (isNavigationRunningRef.current) return;
-    const indices = getTileIndices(e);
-    if (!indices || checkIfStartOrEnd(indices.row, indices.col)) return;
+    const indices = getTileIndicesFromPoint(e.clientX, e.clientY, numRows, numCols);
+    if (!indices || checkIfStartOrEnd(indices.row, indices.col, startTile, endTile)) return;
     setIsMouseDown(true);
     lastTileRef.current = indices;
     wallSetRef.current.clear();
@@ -89,28 +97,22 @@ export function Grid({
     const key = `${row}-${col}`;
     if (wallSetRef.current.has(key)) return;
     wallSetRef.current.add(key);
-    if (checkIfStartOrEnd(row, col)) return;
+    if (checkIfStartOrEnd(row, col, startTile, endTile)) return;
     const el = document.getElementById(key);
     if (!el) return;
+    const borderB = row === numRows - 1 ? " border-b" : "";
+    const borderL = col === 0 ? " border-l" : "";
     if (dragActionRef.current === "wall") {
-      el.className = twMerge(
-        wallTileStyle,
-        el.className.includes("border-b") ? "border-b" : "",
-        el.className.includes("border-l") ? "border-l" : ""
-      );
+      el.className = `${wallTileStyle}${borderB}${borderL}`.trim();
     } else {
-      el.className = twMerge(
-        tileStyle,
-        el.className.includes("border-b") ? "border-b" : "",
-        el.className.includes("border-l") ? "border-l" : ""
-      );
+      el.className = `${tileStyle}${borderB}${borderL}`.trim();
     }
   }
 
   const handleGridMouseMove = (e: React.MouseEvent) => {
     if (isNavigationRunningRef.current || !isMouseDown) return;
-    const indices = getTileIndices(e);
-    if (!indices || checkIfStartOrEnd(indices.row, indices.col)) return;
+    const indices = getTileIndicesFromPoint(e.clientX, e.clientY, numRows, numCols);
+    if (!indices || checkIfStartOrEnd(indices.row, indices.col, startTile, endTile)) return;
     const last = lastTileRef.current;
     if (!last || (last.row === indices.row && last.col === indices.col)) return;
     for (const tile of interpolateTiles(last, indices)) {
@@ -119,22 +121,51 @@ export function Grid({
     lastTileRef.current = indices;
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isNavigationRunningRef.current || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const indices = getTileIndicesFromPoint(touch.clientX, touch.clientY, numRows, numCols);
+    if (!indices || checkIfStartOrEnd(indices.row, indices.col, startTile, endTile)) return;
+    setIsMouseDown(true);
+    lastTileRef.current = indices;
+    wallSetRef.current.clear();
+    const el = document.getElementById(`${indices.row}-${indices.col}`);
+    const isWall = el?.className.includes("bg-gray-300");
+    dragActionRef.current = isWall ? "normal" : "wall";
+    drawToggle(indices.row, indices.col);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isNavigationRunningRef.current || !isMouseDown || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const indices = getTileIndicesFromPoint(touch.clientX, touch.clientY, numRows, numCols);
+    if (!indices || checkIfStartOrEnd(indices.row, indices.col, startTile, endTile)) return;
+    const last = lastTileRef.current;
+    if (!last || (last.row === indices.row && last.col === indices.col)) return;
+    for (const tile of interpolateTiles(last, indices)) {
+      drawToggle(tile.row, tile.col);
+    }
+    lastTileRef.current = indices;
+  };
+
+  const handleTouchEnd = () => {
+    if (isNavigationRunningRef.current) return;
+    handleGridMouseUp();
+  };
+
   return (
     <div
       className={twMerge(
-        "flex items-center flex-col justify-center border-sky-300 mt-5",
-        wrapperPointerClass,
-        `lg:min-h-[${maxRows * 22}px] md:min-h-[${maxRows * 18}px] xs:min-h-[${
-          maxRows * 11
-        }px] min-h-[${maxRows * 9}px]`,
-        `lg:w-[${maxCols * 22}px] md:w-[${maxCols * 18}px] xs:w-[${
-          maxCols * 11
-        }px] w-[${maxCols * 9}px]`
+        "inline-flex flex-col m-auto shadow-2xl rounded-sm border border-sky-400/30 bg-gray-950/80 backdrop-blur-sm select-none",
+        wrapperPointerClass
       )}
       onMouseDown={handleGridMouseDown}
       onMouseUp={handleGridMouseUp}
       onMouseLeave={handleGridMouseUp}
       onMouseMove={handleGridMouseMove}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {grid.map((row, r) => (
         <div key={r} className="flex">
@@ -148,6 +179,7 @@ export function Grid({
               isPath={tile.isPath}
               isTraversed={tile.isTraversed}
               isWall={tile.isWall}
+              isBottomEdge={r === numRows - 1}
               handleMouseDown={() => {}}
               handleMouseUp={() => {}}
               handleMouseEnter={() => {}}

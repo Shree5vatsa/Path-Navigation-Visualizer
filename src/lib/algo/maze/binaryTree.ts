@@ -1,51 +1,136 @@
-import { maxRows, maxCols } from "../../../utils/constants";
-import { createWall } from "../../../utils/createWall";
-import { destroyWall } from "../../../utils/destroyWall";
-import { getRandInt, isEqual, sleep } from "../../../utils/helpers";
+import type { MutableRefObject } from "react";
+import { wallTileStyle } from "../../../utils/constants";
+import { getRandInt, isEqual, runFrameAnimation, sleep } from "../../../utils/helpers";
 import type { GridType, SpeedType, TileType } from "../../../utils/types";
+
+function getSpeed(speedInput: SpeedType | MutableRefObject<SpeedType>): SpeedType {
+  return typeof speedInput === "object" && speedInput !== null && "current" in speedInput
+    ? speedInput.current
+    : speedInput;
+}
+
+function setWallTile(
+  grid: GridType,
+  row: number,
+  col: number,
+  startTile: TileType,
+  endTile: TileType,
+  animClass: string,
+  numRows: number,
+  numCols: number
+) {
+  if (row < 0 || row >= numRows || col < 0 || col >= numCols) return;
+  if (isEqual(grid[row][col], startTile) || isEqual(grid[row][col], endTile))
+    return;
+
+  grid[row][col].isWall = true;
+  const element = document.getElementById(`${row}-${col}`);
+  if (element) {
+    const borderB = row === numRows - 1 ? " border-b" : "";
+    const borderL = col === 0 ? " border-l" : "";
+    element.className = `${wallTileStyle} ${animClass}${borderB}${borderL}`.trim();
+  }
+}
 
 export const binaryTree = async (
   grid: GridType,
   startTile: TileType,
   endTile: TileType,
   setIsDisabled: (disabled: boolean) => void,
-  speed: SpeedType
+  speed: SpeedType | MutableRefObject<SpeedType>
 ) => {
-  createWall(startTile, endTile, speed); // Make initial wall setup
-  await sleep(maxRows * maxCols); // Wait for the wall setup to complete
+  const numRows = grid.length;
+  const numCols = grid[0]?.length || 0;
 
-  for (const row of grid) {
-    // Iterate through each row in the grid
-    for (const node of row) {
-      // Iterate through each node in the row
-      if (node.row % 2 === 0 || node.col % 2 === 0) {
-        // Check if the node is on an even row or column
-        if (!isEqual(node, startTile) && !isEqual(node, endTile)) {
-          // Check if the node is not the start or end tile
-          node.isWall = true; // Set the node as a wall
+  // 1) Pre-compute the full Binary Tree maze layout in memory
+  const isWallMap: boolean[][] = Array.from({ length: numRows }, () =>
+    Array(numCols).fill(false)
+  );
+
+  // Outer perimeter walls
+  for (let c = 0; c < numCols; c++) {
+    isWallMap[0][c] = true;
+    isWallMap[numRows - 1][c] = true;
+  }
+  for (let r = 0; r < numRows; r++) {
+    isWallMap[r][0] = true;
+    isWallMap[r][numCols - 1] = true;
+  }
+
+  // Internal junction pillars
+  for (let r = 2; r < numRows - 1; r += 2) {
+    for (let c = 2; c < numCols - 1; c += 2) {
+      isWallMap[r][c] = true;
+    }
+  }
+
+  // Binary tree carving decisions for each odd room cell (North / East bias)
+  for (let r = 1; r < numRows - 1; r += 2) {
+    for (let c = 1; c < numCols - 1; c += 2) {
+      const isFirstRow = r === 1;
+      const isLastCol = c === numCols - 2;
+
+      if (isFirstRow && isLastCol) {
+        continue;
+      }
+
+      let carveEast: boolean;
+      if (isFirstRow) {
+        carveEast = true;
+      } else if (isLastCol) {
+        carveEast = false; // Carve North
+      } else {
+        carveEast = getRandInt(0, 1) === 1;
+      }
+
+      if (carveEast) {
+        // Carve East: (r, c + 1) is passage -> (r - 1, c) is wall
+        if (r > 1) {
+          isWallMap[r - 1][c] = true;
+        }
+      } else {
+        // Carve North: (r - 1, c) is passage -> (r, c + 1) is wall
+        if (c + 1 < numCols - 1) {
+          isWallMap[r][c + 1] = true;
         }
       }
     }
   }
 
-  for (let r = 1; r < maxRows; r += 2) {
-    // Iterate through odd rows starting from 1
-    for (let c = 1; c < maxCols; c += 2) {
-      // Iterate through odd columns starting from 1
-      if (r === maxRows - 2 && c === maxCols - 2) {
-        // Skip the bottom-right corner
-        continue;
-      } else if (r === maxRows - 2) {
-        // If it's the last row, destroy a wall to the right
-        await destroyWall(grid, r, c, 1, speed);
-      } else if (c === maxCols - 2) {
-        // If it's the last column, destroy a wall below
-        await destroyWall(grid, r, c, 0, speed);
-      } else {
-        // Otherwise, randomly destroy a wall to the right or below
-        await destroyWall(grid, r, c, getRandInt(0, 2), speed);
+  // 2) Collect steps for each wall tile with dynamic animation style evaluation
+  const steps: (() => void)[] = [];
+
+  for (let r = 0; r < numRows; r++) {
+    for (let c = 0; c < numCols; c++) {
+      if (isWallMap[r][c]) {
+        const row = r;
+        const col = c;
+        steps.push(() => {
+          const currentSpeed = getSpeed(speed);
+          const wallAnimClass =
+            currentSpeed === 0.5
+              ? "animate-wall-fast"
+              : currentSpeed === 2
+              ? "animate-wall-slow"
+              : "animate-wall";
+          setWallTile(grid, row, col, startTile, endTile, wallAnimClass, numRows, numCols);
+        });
       }
     }
   }
-  setIsDisabled(false); // Re-enable the UI
+
+  // Dynamic live rate getter (ms per wall step)
+  const getRate = () => {
+    const s = getSpeed(speed);
+    return s === 0.5 ? 0.85 : s === 2 ? 2.6 : 1.35;
+  };
+
+  await runFrameAnimation(steps, getRate);
+
+  // Buffer for final CSS wall keyframes to complete before React state updates
+  const sFinal = getSpeed(speed);
+  const cssDuration = sFinal === 0.5 ? 180 : sFinal === 2 ? 600 : 320;
+  await sleep(cssDuration);
+
+  setIsDisabled(false);
 };

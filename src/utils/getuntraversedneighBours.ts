@@ -1,22 +1,23 @@
-import { maxCols, maxRows } from "./constants";
 import type { GridType, TileType } from "./types";
 
-export const getUntraversedNeighbours = (grid: GridType,tile: TileType): TileType[] => {//yesko return maa bichar garnu
+export const getUntraversedNeighbours = (grid: GridType, tile: TileType): TileType[] => {
   const { row, col } = tile;
+  const numRows = grid.length;
+  const numCols = grid[0]?.length || 0;
   const neighbours = [];
 
   if (row > 0) {
     neighbours.push(grid[row - 1][col]); // Up
   }
-  if (row < maxRows - 1) {
+  if (row < numRows - 1) {
     neighbours.push(grid[row + 1][col]); // Down
   }
 
   if (col > 0) {
     neighbours.push(grid[row][col - 1]); // Left
   }
-  if (col < maxCols - 1) {
+  if (col < numCols - 1) {
     neighbours.push(grid[row][col + 1]); // Right
   }
-  return neighbours.filter((neighbours) => !neighbours.isTraversed);
+  return neighbours.filter((neighbour) => !neighbour.isTraversed && !neighbour.isWall);
 };

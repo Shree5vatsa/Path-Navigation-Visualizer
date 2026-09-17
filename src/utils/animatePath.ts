@@ -1,108 +1,116 @@
+import type { MutableRefObject } from "react";
 import {
-  SPEED_MULTIPLIERS,
   traversedTileStyle,
   pathTileStyle,
 } from "./constants";
-import { isEqual } from "./helpers";
+import { isEqual, runFrameAnimation, sleep } from "./helpers";
 import type { SpeedType, TileType } from "./types";
 
+function getSpeed(speedInput: SpeedType | MutableRefObject<SpeedType>): SpeedType {
+  return typeof speedInput === "object" && speedInput !== null && "current" in speedInput
+    ? speedInput.current
+    : speedInput;
+}
+
 /**
- * Animate pathfinding traversal and final path with proper sequencing.
- * Returns a Promise that resolves only after ALL CSS animations complete.
+ * Animate pathfinding traversal and final path with continuous 60fps/120fps stream.
+ * Supports live mid-animation speed changes via dynamic speed getters.
  */
-export function animatePath(
+export async function animatePath(
   traversedTiles: TileType[],
   path: TileType[],
   startTile: TileType,
   endTile: TileType,
-  speed: SpeedType
+  speed: SpeedType | MutableRefObject<SpeedType>
 ): Promise<void> {
-  const traverseDelay = SPEED_MULTIPLIERS.PATHFINDING[speed];
-  const pathDelay = SPEED_MULTIPLIERS.PATH_ANIMATION[speed];
+  // Reset tile traversal states first
+  for (let i = 0; i < traversedTiles.length; i++) {
+    traversedTiles[i].isTraversed = false;
+    traversedTiles[i].isPath = false;
+  }
+  for (let i = 0; i < path.length; i++) {
+    path[i].isTraversed = false;
+    path[i].isPath = false;
+  }
 
-  // Get animation classes based on speed
-  const traversedAnimClass =
-    speed === 0.5
-      ? "animate-traversed-fast"
-      : speed === 2
-      ? "animate-traversed-slow"
-      : "animate-traversed";
-  const pathAnimClass =
-    speed === 0.5
-      ? "animate-path-fast"
-      : speed === 2
-      ? "animate-path-slow"
-      : "animate-path";
+  // 1) Build step callbacks for every single traversed tile
+  const traversalSteps: (() => void)[] = [];
+  for (let i = 0; i < traversedTiles.length; i++) {
+    const tile = traversedTiles[i];
+    if (isEqual(tile, startTile) || isEqual(tile, endTile)) continue;
 
-  return new Promise((resolve) => {
-    // Clear any existing states first
-    [...traversedTiles, ...path].forEach((tile) => {
-      tile.isTraversed = false;
-      tile.isPath = false;
+    traversalSteps.push(() => {
+      const el = document.getElementById(`${tile.row}-${tile.col}`);
+      if (!el) return;
+      const currentSpeed = getSpeed(speed);
+      const animClass =
+        currentSpeed === 0.5
+          ? "animate-traversed-fast"
+          : currentSpeed === 2
+          ? "animate-traversed-slow"
+          : "animate-traversed";
+      const borderB = el.className.includes("border-b") ? " border-b" : "";
+      const borderL = el.className.includes("border-l") ? " border-l" : "";
+      el.className = `${traversedTileStyle} ${animClass}${borderB}${borderL}`.trim();
+      tile.isTraversed = true;
     });
+  }
 
-    // 1) Animate traversal tiles first with improved timing
-    traversedTiles.forEach((tile, i) => {
-      setTimeout(() => {
-        if (isEqual(tile, startTile) || isEqual(tile, endTile)) return;
-        const el = document.getElementById(`${tile.row}-${tile.col}`);
-        if (!el) return;
-        el.className = `${traversedTileStyle} ${traversedAnimClass}`;
-        tile.isTraversed = true;
-      }, i * traverseDelay);
+  // Dynamic live rate getter (ms per node)
+  const getTraversalRate = () => {
+    const s = getSpeed(speed);
+    return s === 0.5 ? 2.5 : s === 2 ? 18 : 7;
+  };
+
+  // Run continuous stream with live rate adaptation
+  await runFrameAnimation(traversalSteps, getTraversalRate);
+
+  // If no path was found, wait for final CSS keyframe to complete and exit
+  if (path.length === 0) {
+    const s = getSpeed(speed);
+    const cssFinishWait = s === 0.5 ? 250 : s === 2 ? 800 : 450;
+    await sleep(cssFinishWait);
+    return;
+  }
+
+  // Smooth breath before path discovery
+  const sAfterTraversal = getSpeed(speed);
+  const pathPause = sAfterTraversal === 0.5 ? 80 : sAfterTraversal === 2 ? 300 : 160;
+  await sleep(pathPause);
+
+  // 2) Build step callbacks for every path tile
+  const pathSteps: (() => void)[] = [];
+  for (let i = 0; i < path.length; i++) {
+    const tile = path[i];
+    if (isEqual(tile, startTile) || isEqual(tile, endTile)) continue;
+
+    pathSteps.push(() => {
+      const el = document.getElementById(`${tile.row}-${tile.col}`);
+      if (!el) return;
+      const currentSpeed = getSpeed(speed);
+      const animClass =
+        currentSpeed === 0.5
+          ? "animate-path-fast"
+          : currentSpeed === 2
+          ? "animate-path-slow"
+          : "animate-path";
+      const borderB = el.className.includes("border-b") ? " border-b" : "";
+      const borderL = el.className.includes("border-l") ? " border-l" : "";
+      el.className = `${pathTileStyle} ${animClass}${borderB}${borderL}`.trim();
+      tile.isPath = true;
     });
+  }
 
-    // 2) After traversal animation completes, start path animation
-    const whenPathStarts =
-      traversedTiles.length * traverseDelay +
-      (speed === 0.5 ? 150 : speed === 2 ? 400 : 250);
+  const getPathRate = () => {
+    const s = getSpeed(speed);
+    return s === 0.5 ? 6 : s === 2 ? 30 : 14;
+  };
 
-    path.forEach((tile, i) => {
-      setTimeout(() => {
-        if (isEqual(tile, startTile) || isEqual(tile, endTile)) return;
-        const el = document.getElementById(`${tile.row}-${tile.col}`);
-        if (!el) return;
-        el.className = `${pathTileStyle} ${pathAnimClass}`;
-        tile.isPath = true;
-      }, whenPathStarts + i * pathDelay);
-    });
+  await runFrameAnimation(pathSteps, getPathRate);
 
-    // 3) Clean up animation classes after all animations complete
-    const lastIndex = Math.max(0, path.length - 1);
-    const lastAnimationStart = whenPathStarts + lastIndex * pathDelay;
-    const cssPathDuration = speed === 0.5 ? 800 : speed === 2 ? 2800 : 1400; // Updated for new CSS durations
-    const buffer = speed === 0.5 ? 200 : speed === 2 ? 500 : 350;
-
-    setTimeout(() => {
-      // Remove animation classes and clean up borders
-      [...traversedTiles, ...path].forEach((tile) => {
-        if (isEqual(tile, startTile) || isEqual(tile, endTile)) return;
-        const el = document.getElementById(`${tile.row}-${tile.col}`);
-        if (!el) return;
-
-        // Remove animation classes
-        el.classList.remove(
-          "animate-traversed",
-          "animate-path",
-          "animate-traversed-fast",
-          "animate-traversed-slow",
-          "animate-path-fast",
-          "animate-path-slow"
-        );
-
-        // Clean up borders and apply final styles
-        const borderClasses = [];
-        if (el.className.includes("border-b")) borderClasses.push("border-b");
-        if (el.className.includes("border-l")) borderClasses.push("border-l");
-
-        if (tile.isPath) {
-          el.className = `${pathTileStyle} ${borderClasses.join(" ")}`;
-        } else if (tile.isTraversed) {
-          el.className = `${traversedTileStyle} ${borderClasses.join(" ")}`;
-        }
-      });
-
-      resolve();
-    }, lastAnimationStart + cssPathDuration + buffer);
-  });
+  // Buffer for final path keyframes to complete before unlocking
+  const sFinal = getSpeed(speed);
+  const cssPathDuration = sFinal === 0.5 ? 300 : sFinal === 2 ? 1100 : 600;
+  await sleep(cssPathDuration);
 }
+

@@ -11,7 +11,7 @@ export const aStar = (
   const traversedTiles = [];
   const heuristicCost = initHeuristicCost(grid, endTile);
 
-  const functionCost = initFunctionCost(); //2d array banayo fucntion store garna Lai
+  const functionCost = initFunctionCost(grid); //2d array banayo fucntion store garna Lai
 
   const base = grid[startTile.row][startTile.col];
   base.distance = 0;
@@ -33,7 +33,8 @@ export const aStar = (
     if (currentTile.isWall) continue;
     if (currentTile.distance === Infinity) break;
 
-    // Only add to traversed tiles for animation, don't set visual state
+    // Mark as traversed during search and add to traversed tiles for animation
+    currentTile.isTraversed = true;
     traversedTiles.push(currentTile);
     if (isEqual(currentTile, endTile)) break;
 
@@ -57,13 +58,14 @@ export const aStar = (
     }
   }
 
-  //path bana
+  // Backtrack to build path if destination is reachable
   const path = [];
   let curr: TileType | null = grid[endTile.row][endTile.col];
-
-  while (curr != null) {
-    path.unshift(curr);
-    curr = curr.parent;
+  if (curr.parent || isEqual(curr, startTile)) {
+    while (curr != null) {
+      path.unshift(curr);
+      curr = curr.parent;
+    }
   }
   return { traversedTiles, path };
 };

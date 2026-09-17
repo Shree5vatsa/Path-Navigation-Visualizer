@@ -1,6 +1,4 @@
-import { maxCols, maxRows } from "./constants";
 import type { GridType, TileType } from "./types";
-
 
 const retireveheuristicCost = (currentTile: TileType, endTile: TileType) => {
     const manhattanDist = 1;
@@ -9,11 +7,13 @@ const retireveheuristicCost = (currentTile: TileType, endTile: TileType) => {
     return manhattanDist * (row + col);
 }
 
-export const initHeuristicCost = (grid: GridType, endTile: TileType)=>{
+export const initHeuristicCost = (grid: GridType, endTile: TileType) => {
+    const numRows = grid.length;
+    const numCols = grid[0]?.length || 0;
     const heuristicCost = [];
-    for (let i = 0; i < maxRows; i++){
+    for (let i = 0; i < numRows; i++) {
         const row = [];
-        for (let j = 0; j < maxCols; j++){
+        for (let j = 0; j < numCols; j++) {
             row.push(retireveheuristicCost(grid[i][j], endTile));
         }
         heuristicCost.push(row);
@@ -21,11 +21,13 @@ export const initHeuristicCost = (grid: GridType, endTile: TileType)=>{
     return heuristicCost;
 }
 
-export const initFunctionCost = () => {
+export const initFunctionCost = (grid?: GridType) => {
+    const numRows = grid ? grid.length : 47;
+    const numCols = grid ? (grid[0]?.length || 87) : 87;
     const functionCost = [];
-    for (let i = 0; i < maxRows; i++){
+    for (let i = 0; i < numRows; i++) {
         const row = [];
-        for (let j = 0; j < maxCols; j++){
+        for (let j = 0; j < numCols; j++) {
             row.push(Infinity);
         }
         functionCost.push(row);

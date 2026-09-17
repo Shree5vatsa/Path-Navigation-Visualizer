@@ -1,14 +1,29 @@
 import { useState } from "react";
-import type { AlgorithmType, MazeType, SpeedType } from "../utils/types";
+import type { AlgorithmType, MazeType, TileType } from "../utils/types";
 import { usePathAlgo } from "../hooks/usePathAlgo";
 import { useTile } from "../hooks/useTile";
 import { useSpeed } from "../hooks/useSpeed";
 import { ResetGrid } from "../utils/ResetGrid";
 import { runMazeAlgo } from "../utils/runMazeAlgo";
-import { MAZES, NavigatingAlgorithms, SPEEDS } from "../utils/constants";
+import {
+  GRID_SIZE_PRESETS,
+  MAZES,
+  MAX_GRID_COLS,
+  MAX_GRID_ROWS,
+  MIN_GRID_COLS,
+  MIN_GRID_ROWS,
+  NavigatingAlgorithms,
+  endTileStyle,
+  startTileStyle,
+  tileStyle,
+  wallTileStyle,
+} from "../utils/constants";
 import { runPathAlgorithm } from "../utils/runPathAlgorithm";
+import { createGrid } from "../utils/helpers";
 import type { MutableRefObject } from "react";
 import { useToast } from "../hooks/useToast";
+import { GridSizeModal } from "./GridSizeModal";
+import { SpeedControl } from "./SpeedControl";
 
 interface NavProps {
   isNavigationRunningRef: MutableRefObject<boolean>;
@@ -16,6 +31,7 @@ interface NavProps {
 
 export function Nav({ isNavigationRunningRef }: NavProps) {
   const [isDisabled, setIsDisabled] = useState(false);
+  const [showCustomSizeModal, setShowCustomSizeModal] = useState(false);
   const {
     maze,
     setMaze,
@@ -26,9 +42,69 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
     algorithm,
     setAlgorithm,
   } = usePathAlgo();
-  const { startTile, endTile } = useTile();
-  const { speed, setSpeed } = useSpeed();
+  const { startTile, setStartTile, endTile, setEndTile } = useTile();
+  const { speed, setSpeed, speedRef } = useSpeed();
   const { showToast } = useToast();
+
+  const currentRows = grid.length;
+  const currentCols = grid[0]?.length || 0;
+  const currentKey = `${currentRows}x${currentCols}`;
+  const isPresetMatch = GRID_SIZE_PRESETS.some(
+    (p) => p.rows === currentRows && p.cols === currentCols
+  );
+
+  const handleResizeGrid = (newRows: number, newCols: number) => {
+    let r = Math.max(MIN_GRID_ROWS, Math.min(MAX_GRID_ROWS, Math.floor(newRows)));
+    let c = Math.max(MIN_GRID_COLS, Math.min(MAX_GRID_COLS, Math.floor(newCols)));
+
+    // Ensure odd dimensions for proper maze rooms, corridor symmetry and start/goal placement
+    if (r % 2 === 0) r += 1;
+    if (c % 2 === 0) c += 1;
+
+    const newStartTile: TileType = {
+      row: 1,
+      col: 1,
+      isStart: true,
+      isEnd: false,
+      isWall: false,
+      isPath: false,
+      distance: 0,
+      parent: null,
+      isTraversed: false,
+    };
+
+    const newEndTile: TileType = {
+      row: r - 2,
+      col: c - 2,
+      isStart: false,
+      isEnd: true,
+      isWall: false,
+      isPath: false,
+      distance: 0,
+      parent: null,
+      isTraversed: false,
+    };
+
+    setStartTile(newStartTile);
+    setEndTile(newEndTile);
+    setGrid(createGrid(newStartTile, newEndTile, r, c));
+    setIsGraphVisualized(false);
+    showToast(
+      `📐 Grid set to ${r} × ${c} (Start: [1, 1], Goal: [${r - 2}, ${c - 2}])`,
+      "info"
+    );
+  };
+
+  const handlePresetChange = (value: string) => {
+    if (value === "custom") {
+      setShowCustomSizeModal(true);
+      return;
+    }
+    const [r, c] = value.split("x").map(Number);
+    if (!isNaN(r) && !isNaN(c)) {
+      handleResizeGrid(r, c);
+    }
+  };
 
   const handleMazeSelection = (selectedMaze: MazeType) => {
     setMaze(selectedMaze);
@@ -42,7 +118,7 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
 
     setIsDisabled(true);
     showToast(
-      `🔄 Generating ${maze.replace("_", " ").toLowerCase()} maze...`,
+      `🧩 Generating ${maze.replace("_", " ").toLowerCase()} maze...`,
       "info"
     );
 
@@ -55,7 +131,7 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
       startTile,
       endTile,
       setIsDisabled,
-      speed,
+      speed: speedRef,
     });
 
     setGrid(grid.map((row) => row.map((tile) => ({ ...tile }))));
@@ -69,10 +145,7 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
 
   const handlerRunVisualizer = async () => {
     if (isGraphVisualized) {
-      setIsGraphVisualized(false);
-      ResetGrid({ grid: grid.slice(), startTile, endTile });
-      setGrid(grid.map((row) => row.map((tile) => ({ ...tile }))));
-      showToast("🔄 Grid reset successfully!", "info");
+      handleClearPath();
       return;
     }
 
@@ -93,34 +166,29 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
     });
 
     try {
-      await runPathAlgorithm({
+      const { pathFound, pathLength, traversedCount } = await runPathAlgorithm({
         algorithm,
         grid,
         startTile,
         endTile,
-        speed,
+        speed: speedRef,
       });
 
       // Only update grid state after animation completes
       setGrid(grid.map((row) => row.map((tile) => ({ ...tile }))));
       setIsGraphVisualized(true);
 
-      // Count path length from grid state to ensure accuracy
-      let pathLength = 0;
-      grid.forEach((row) => {
-        row.forEach((tile) => {
-          if (tile.isPath) pathLength++;
-        });
-      });
-
-      // Show completion message
-      if (pathLength > 0) {
+      // Show completion message with exact metrics
+      if (pathFound) {
         showToast(
-          `🎯 Path found with ${pathLength} steps using ${algorithm}!`,
+          `🎯 Path found! Length: ${pathLength} steps (${traversedCount} nodes explored) using ${algorithm}!`,
           "success"
         );
       } else {
-        showToast("❌ No path found!", "info");
+        showToast(
+          `❌ No path found! Explored ${traversedCount} nodes without reaching target (${algorithm}).`,
+          "info"
+        );
       }
     } catch (error) {
       showToast("❌ Error running pathfinding algorithm!", "info");
@@ -134,37 +202,26 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
   const handleClearPath = () => {
     if (isDisabled) return;
 
+    const numRows = grid.length;
     grid.forEach((row) => {
       row.forEach((tile) => {
         if (tile.isTraversed || tile.isPath) {
           const el = document.getElementById(`${tile.row}-${tile.col}`);
           if (el) {
-            // Preserve border classes
-            const borderClasses = [];
-            if (el.className.includes("border-b"))
-              borderClasses.push("border-b");
-            if (el.className.includes("border-l"))
-              borderClasses.push("border-l");
-
-            // Remove all animation and state classes
+            // Remove all animation classes
             el.classList.remove("animate-traversed", "animate-path");
 
+            const borderB = tile.row === numRows - 1 ? " border-b" : "";
+            const borderL = tile.col === 0 ? " border-l" : "";
+
             if (tile.isStart) {
-              el.className = `transition-all lg:w-[15px] md:w-[13px] xs:w-[8px] w-[7px] lg:h-[15px] md:h-[13px] xs:h-[8px] h-[7px] border-t border-r border-sky-200 bg-green-400 ${borderClasses.join(
-                " "
-              )}`;
+              el.className = `${startTileStyle}${borderB}${borderL}`.trim();
             } else if (tile.isEnd) {
-              el.className = `transition-all lg:w-[15px] md:w-[13px] xs:w-[8px] w-[7px] lg:h-[15px] md:h-[13px] xs:h-[8px] h-[7px] border-t border-r border-sky-200 bg-red-400 ${borderClasses.join(
-                " "
-              )}`;
+              el.className = `${endTileStyle}${borderB}${borderL}`.trim();
             } else if (tile.isWall) {
-              el.className = `transition-all lg:w-[15px] md:w-[13px] xs:w-[8px] w-[7px] lg:h-[15px] md:h-[13px] xs:h-[8px] h-[7px] border-t border-r border-sky-200 bg-gray-300 ${borderClasses.join(
-                " "
-              )}`;
+              el.className = `${wallTileStyle}${borderB}${borderL}`.trim();
             } else {
-              el.className = `transition-all lg:w-[15px] md:w-[13px] xs:w-[8px] w-[7px] lg:h-[15px] md:h-[13px] xs:h-[8px] h-[7px] border-t border-r border-sky-200 ${borderClasses.join(
-                " "
-              )}`;
+              el.className = `${tileStyle}${borderB}${borderL}`.trim();
             }
           }
 
@@ -179,7 +236,7 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
 
     setGrid(grid.map((row) => row.map((tile) => ({ ...tile }))));
     setIsGraphVisualized(false);
-    showToast("✨ Path and visited tiles cleared successfully!", "info");
+    showToast("🔄 Path reset successfully!", "info");
   };
 
   const handleClearGrid = () => {
@@ -188,120 +245,145 @@ export function Nav({ isNavigationRunningRef }: NavProps) {
     ResetGrid({ grid, startTile, endTile });
     setGrid(grid.map((row) => row.map((tile) => ({ ...tile }))));
     setIsGraphVisualized(false);
-    setMaze("NONE");
     showToast("🗑️ Grid cleared successfully!", "info");
   };
 
   return (
-    <div className="bg-gray-800 text-white p-3 shadow-lg">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-3">
-          <h1 className="text-xl font-bold text-white">
-            PATH NAVIGATION VISUALIZER
-          </h1>
+    <>
+      <header className="bg-gray-900/95 backdrop-blur-md text-white px-3 py-2 sm:px-6 sm:py-2.5 border-b border-gray-800 shadow-xl z-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-1.5 sm:mb-2">
+            <h1 className="text-base sm:text-lg md:text-xl font-extrabold tracking-wider bg-gradient-to-r from-blue-400 via-sky-300 to-cyan-400 bg-clip-text text-transparent inline-flex items-center gap-2">
+              <span>🧭</span> PATH NAVIGATION VISUALIZER
+            </h1>
+          </div>
+
+          {/* Responsive Control Ribbon */}
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4">
+            {/* Grid Size Group */}
+            <div className="flex items-center gap-1.5 bg-gray-800/80 p-1 sm:p-1.5 rounded-lg border border-gray-700/60 shadow-inner">
+              <div className="flex flex-col">
+                <label className="text-xs sm:text-sm text-gray-300 font-semibold px-1 flex items-center justify-between gap-1.5">
+                  <span>Grid Size</span>
+                  <span className="text-[10px] sm:text-xs text-sky-400 font-mono font-bold">
+                    {currentRows}×{currentCols}
+                  </span>
+                </label>
+                <select
+                  disabled={isDisabled}
+                  className="bg-gray-700/90 text-white px-2 py-1 rounded text-xs sm:text-sm border border-gray-600 focus:border-blue-400 focus:outline-none hover:bg-gray-600 transition-colors max-w-[125px] sm:max-w-[155px]"
+                  value={isPresetMatch ? currentKey : "custom"}
+                  onChange={(e) => handlePresetChange(e.target.value)}
+                >
+                  {GRID_SIZE_PRESETS.map((preset) => (
+                    <option
+                      key={`${preset.rows}x${preset.cols}`}
+                      value={`${preset.rows}x${preset.cols}`}
+                    >
+                      {preset.name}
+                    </option>
+                  ))}
+                  <option value="custom">⚙️ Custom...</option>
+                </select>
+              </div>
+              <button
+                disabled={isDisabled}
+                onClick={() => setShowCustomSizeModal(true)}
+                className="self-end bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed px-2 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-semibold transition-all border border-gray-600 active:scale-95 shadow"
+                title="Customize Grid Dimensions"
+              >
+                📐
+              </button>
+            </div>
+
+            {/* Maze Generation Group */}
+            <div className="flex items-center gap-1.5 bg-gray-800/80 p-1 sm:p-1.5 rounded-lg border border-gray-700/60 shadow-inner">
+              <div className="flex flex-col">
+                <label className="text-xs sm:text-sm text-gray-300 font-semibold px-1">
+                  Maze Type
+                </label>
+                <select
+                  disabled={isDisabled}
+                  className="bg-gray-700/90 text-white px-2 py-1 rounded text-xs sm:text-sm border border-gray-600 focus:border-blue-400 focus:outline-none hover:bg-gray-600 transition-colors max-w-[110px] sm:max-w-[140px]"
+                  value={maze}
+                  onChange={(e) => handleMazeSelection(e.target.value as MazeType)}
+                >
+                  {MAZES.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                disabled={isDisabled}
+                onClick={handleGenerateMaze}
+                className="self-end bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed px-2.5 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-semibold transition-all shadow hover:shadow-cyan-500/20 active:scale-95"
+                title="Generate Maze"
+              >
+                🧩 Maze
+              </button>
+            </div>
+
+            {/* Speed Control - Distinct Tachometer Gauge & 1-Click Segmented Pills */}
+            <SpeedControl speed={speed} setSpeed={setSpeed} />
+
+            {/* Algorithm Group */}
+            <div className="flex items-center gap-1.5 bg-gray-800/80 p-1 sm:p-1.5 rounded-lg border border-gray-700/60 shadow-inner">
+              <div className="flex flex-col">
+                <label className="text-xs sm:text-sm text-gray-300 font-semibold px-1">
+                  Algorithm
+                </label>
+                <select
+                  disabled={isDisabled}
+                  className="bg-gray-700/90 text-white px-2 py-1 rounded text-xs sm:text-sm border border-gray-600 focus:border-blue-400 focus:outline-none hover:bg-gray-600 transition-colors max-w-[120px] sm:max-w-[150px]"
+                  value={algorithm}
+                  onChange={(e) => setAlgorithm(e.target.value as AlgorithmType)}
+                >
+                  {NavigatingAlgorithms.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                disabled={isDisabled}
+                onClick={handlerRunVisualizer}
+                className={`self-end ${
+                  isGraphVisualized
+                    ? "bg-amber-600 hover:bg-amber-500 shadow-amber-500/20"
+                    : "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20"
+                } disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-semibold transition-all shadow flex items-center gap-1 active:scale-95`}
+                title={isGraphVisualized ? "Reset Path" : "Start Pathfinding"}
+              >
+                {isGraphVisualized ? "🔄 Reset" : "▶️ Start"}
+              </button>
+            </div>
+
+            {/* Clear Actions */}
+            <div className="flex items-center gap-1.5 self-end">
+              <button
+                disabled={isDisabled}
+                onClick={handleClearGrid}
+                className="bg-rose-700/90 hover:bg-rose-600 disabled:opacity-40 disabled:cursor-not-allowed px-2.5 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all border border-rose-600/80 active:scale-95 shadow-sm"
+                title="Clear all walls and reset entire grid"
+              >
+                🗑️ Clear Grid
+              </button>
+            </div>
+          </div>
         </div>
+      </header>
 
-        <div className="flex flex-wrap justify-center items-end gap-4 mb-3">
-          <div className="flex flex-col items-center">
-            <label className="text-xs text-gray-300 mb-1 font-medium">
-              Maze Generation
-            </label>
-            <select
-              disabled={isDisabled}
-              className="bg-gray-700 text-white px-2 py-1.5 rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none hover:bg-gray-600 transition-colors min-w-[120px] text-sm"
-              value={maze}
-              onChange={(e) => handleMazeSelection(e.target.value as MazeType)}
-            >
-              {MAZES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <label className="text-xs text-gray-300 mb-1 font-medium">
-              Generate
-            </label>
-            <button
-              disabled={isDisabled}
-              onClick={handleGenerateMaze}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm"
-            >
-              🔄 Maze
-            </button>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <label className="text-xs text-gray-300 mb-1 font-medium">
-              Pathfinding Algorithm
-            </label>
-            <select
-              disabled={isDisabled}
-              className="bg-gray-700 text-white px-2 py-1.5 rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none hover:bg-gray-600 transition-colors min-w-[140px] text-sm"
-              value={algorithm}
-              onChange={(e) => setAlgorithm(e.target.value as AlgorithmType)}
-            >
-              {NavigatingAlgorithms.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <label className="text-xs text-gray-300 mb-1 font-medium">
-              Speed
-            </label>
-            <select
-              className="bg-gray-700 text-white px-2 py-1.5 rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none hover:bg-gray-600 transition-colors min-w-[80px] text-sm"
-              value={speed}
-              onChange={(e) =>
-                setSpeed(parseFloat(e.target.value) as SpeedType)
-              }
-            >
-              {SPEEDS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <label className="text-xs text-gray-300 mb-1 font-medium">
-              Visualize
-            </label>
-            <button
-              disabled={isDisabled}
-              onClick={handlerRunVisualizer}
-              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1 shadow-sm"
-            >
-              {isGraphVisualized ? "🔄" : "▶️"}{" "}
-              {isGraphVisualized ? "Reset" : "Start"}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex justify-center gap-3">
-          <button
-            disabled={isDisabled}
-            onClick={handleClearPath}
-            className="bg-gray-600 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1 shadow-sm"
-          >
-            🧹 Clear Path
-          </button>
-          <button
-            disabled={isDisabled}
-            onClick={handleClearGrid}
-            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1 shadow-sm"
-          >
-            🗑️ Clear Grid
-          </button>
-        </div>
-      </div>
-    </div>
+      <GridSizeModal
+        isOpen={showCustomSizeModal}
+        onClose={() => setShowCustomSizeModal(false)}
+        currentRows={currentRows}
+        currentCols={currentCols}
+        onApply={handleResizeGrid}
+      />
+    </>
   );
 }
+

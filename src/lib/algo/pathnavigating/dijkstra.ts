@@ -20,7 +20,8 @@ export const dijkstra = (
     if (currentTile.isWall) continue;
     if (currentTile.distance === Infinity) break;
 
-    // Only add to traversed tiles for animation, don't set visual state
+    // Mark as traversed during search and add to traversed tiles for animation
+    currentTile.isTraversed = true;
     traversedTiles.push(currentTile);
     if (isEqual(currentTile, endTile)) break;
 
@@ -37,9 +38,11 @@ export const dijkstra = (
   }
   const path = [];
   let current: TileType | null = grid[endTile.row][endTile.col];
-  while (current !== null) {
-    path.unshift(current);
-    current = current.parent;
+  if (current.parent || isEqual(current, startTile)) {
+    while (current !== null) {
+      path.unshift(current);
+      current = current.parent;
+    }
   }
   return { traversedTiles, path };
 };

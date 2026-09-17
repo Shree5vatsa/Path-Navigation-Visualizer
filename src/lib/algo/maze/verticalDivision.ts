@@ -1,10 +1,8 @@
-// src/lib/algo/maze/verticalDivision.ts
-import { SPEED_MULTIPLIERS, wallTileStyle } from "../../../utils/constants";
-import { getRandInt, isEqual, sleep } from "../../../utils/helpers";
-import type { GridType, SpeedType, TileType } from "../../../utils/types";
-import recursiveDivision from "./recursiveDivision";
+import { wallTileStyle } from "../../../utils/constants";
+import { getRandInt, isEqual } from "../../../utils/helpers";
+import type { GridType, TileType } from "../../../utils/types";
 
-export async function verticalDivision({
+export function addVerticalDivisionSteps({
   grid,
   startTile,
   endTile,
@@ -12,8 +10,8 @@ export async function verticalDivision({
   col,
   height,
   width,
-  setIsDisabled,
-  speed,
+  animClass,
+  steps,
 }: {
   grid: GridType;
   startTile: TileType;
@@ -22,61 +20,33 @@ export async function verticalDivision({
   col: number;
   height: number;
   width: number;
-  setIsDisabled: (d: boolean) => void;
-  speed: SpeedType;
+  animClass: string;
+  steps: (() => void)[];
 }) {
-  const delay = SPEED_MULTIPLIERS.WALL_DESTRUCTION[speed] * 0.5;
-  const animationClass =
-    speed === 0.5
-      ? "animate-wall-fast"
-      : speed === 2
-      ? "animate-wall-slow"
-      : "animate-wall";
-
-  // choose a wall‐column at an odd offset
+  const numRows = grid.length;
   const wallCol = col + getRandInt(0, width - 2) * 2 + 1;
-  // choose exactly one row (even offset) to leave open
   const passageRow = row + getRandInt(0, height - 1) * 2;
 
-  // build the wall top→bottom
   for (let y = 0; y < 2 * height - 1; y++) {
-    const r = row + y;
-    if (r === passageRow) continue;
+    const curRow = row + y;
+    if (curRow === passageRow) continue;
     if (
-      !isEqual(grid[r][wallCol], startTile) &&
-      !isEqual(grid[r][wallCol], endTile)
+      !isEqual(grid[curRow][wallCol], startTile) &&
+      !isEqual(grid[curRow][wallCol], endTile)
     ) {
-      grid[r][wallCol].isWall = true;
-      const element = document.getElementById(`${r}-${wallCol}`);
-      if (element) {
-        element.className = `${wallTileStyle} ${animationClass}`;
-      }
-      await sleep(delay);
+      const curR = curRow;
+      const curC = wallCol;
+      steps.push(() => {
+        grid[curR][curC].isWall = true;
+        const element = document.getElementById(`${curR}-${curC}`);
+        if (element) {
+          const borderB = curR === numRows - 1 ? " border-b" : "";
+          const borderL = wallCol === 0 ? " border-l" : "";
+          element.className = `${wallTileStyle} ${animClass}${borderB}${borderL}`.trim();
+        }
+      });
     }
   }
 
-  // split left region
-  await recursiveDivision({
-    grid,
-    startTile,
-    endTile,
-    row,
-    col,
-    height,
-    width: (wallCol - col + 1) / 2,
-    setIsDisabled,
-    speed,
-  });
-  // split right region
-  await recursiveDivision({
-    grid,
-    startTile,
-    endTile,
-    row,
-    col: wallCol + 1,
-    height,
-    width: width - (wallCol - col + 1) / 2,
-    setIsDisabled,
-    speed,
-  });
+  return { wallCol };
 }

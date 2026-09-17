@@ -1,10 +1,8 @@
-// src/lib/algo/maze/horizontalDivision.ts
-import { SPEED_MULTIPLIERS, wallTileStyle } from "../../../utils/constants";
-import { getRandInt, isEqual, sleep } from "../../../utils/helpers";
-import type { GridType, SpeedType, TileType } from "../../../utils/types";
-import recursiveDivision from "./recursiveDivision";
+import { wallTileStyle } from "../../../utils/constants";
+import { getRandInt, isEqual } from "../../../utils/helpers";
+import type { GridType, TileType } from "../../../utils/types";
 
-export async function horizontalDivision({
+export function addHorizontalDivisionSteps({
   grid,
   startTile,
   endTile,
@@ -12,8 +10,8 @@ export async function horizontalDivision({
   col,
   height,
   width,
-  setIsDisabled,
-  speed,
+  animClass,
+  steps,
 }: {
   grid: GridType;
   startTile: TileType;
@@ -22,61 +20,33 @@ export async function horizontalDivision({
   col: number;
   height: number;
   width: number;
-  setIsDisabled: (d: boolean) => void;
-  speed: SpeedType;
+  animClass: string;
+  steps: (() => void)[];
 }) {
-  const delay = SPEED_MULTIPLIERS.WALL_DESTRUCTION[speed] * 0.5;
-  const animationClass =
-    speed === 0.5
-      ? "animate-wall-fast"
-      : speed === 2
-      ? "animate-wall-slow"
-      : "animate-wall";
-
-  // choose a wall-row at an odd offset
+  const numRows = grid.length;
   const wallRow = row + getRandInt(0, height - 2) * 2 + 1;
-  // choose exactly one column (even offset) to leave open
   const passageCol = col + getRandInt(0, width - 1) * 2;
 
-  // build the wall left→right
   for (let x = 0; x < 2 * width - 1; x++) {
-    const c = col + x;
-    if (c === passageCol) continue;
+    const curCol = col + x;
+    if (curCol === passageCol) continue;
     if (
-      !isEqual(grid[wallRow][c], startTile) &&
-      !isEqual(grid[wallRow][c], endTile)
+      !isEqual(grid[wallRow][curCol], startTile) &&
+      !isEqual(grid[wallRow][curCol], endTile)
     ) {
-      grid[wallRow][c].isWall = true;
-      const element = document.getElementById(`${wallRow}-${c}`);
-      if (element) {
-        element.className = `${wallTileStyle} ${animationClass}`;
-      }
-      await sleep(delay);
+      const curR = wallRow;
+      const curC = curCol;
+      steps.push(() => {
+        grid[curR][curC].isWall = true;
+        const element = document.getElementById(`${curR}-${curC}`);
+        if (element) {
+          const borderB = curR === numRows - 1 ? " border-b" : "";
+          const borderL = curC === 0 ? " border-l" : "";
+          element.className = `${wallTileStyle} ${animClass}${borderB}${borderL}`.trim();
+        }
+      });
     }
   }
 
-  // split top region
-  await recursiveDivision({
-    grid,
-    startTile,
-    endTile,
-    row,
-    col,
-    height: (wallRow - row + 1) / 2,
-    width,
-    setIsDisabled,
-    speed,
-  });
-  // split bottom region
-  await recursiveDivision({
-    grid,
-    startTile,
-    endTile,
-    row: wallRow + 1,
-    col,
-    height: height - (wallRow - row + 1) / 2,
-    width,
-    setIsDisabled,
-    speed,
-  });
+  return { wallRow };
 }

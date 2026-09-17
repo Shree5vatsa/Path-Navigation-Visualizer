@@ -33,15 +33,16 @@ export function Toast({
   const textColor = "text-white";
 
   return (
-    <div className="fixed bottom-20 left-4 z-50">
+    <div className="fixed bottom-12 sm:bottom-16 left-3 sm:left-4 right-3 sm:right-auto sm:max-w-md z-50 pointer-events-auto">
       <div
-        className={`${bgColor} ${textColor} px-6 py-4 rounded-lg shadow-lg max-w-sm animate-slide-in border border-gray-300`}
+        className={`${bgColor} ${textColor} px-4 py-2.5 sm:px-5 sm:py-3.5 rounded-xl shadow-2xl animate-slide-in border border-white/20 backdrop-blur-md`}
       >
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium pr-4">{message}</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs sm:text-sm font-medium">{message}</p>
           <button
             onClick={onClose}
-            className="text-lg leading-none hover:opacity-70 font-bold flex-shrink-0"
+            className="text-lg leading-none hover:opacity-75 font-bold flex-shrink-0 p-1"
+            aria-label="Close message"
           >
             ×
           </button>

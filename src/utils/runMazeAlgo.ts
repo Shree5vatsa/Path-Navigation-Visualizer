@@ -1,9 +1,7 @@
+import type { MutableRefObject } from "react";
 import { binaryTree } from "../lib/algo/maze/binaryTree";
 import recursiveDivision from "../lib/algo/maze/recursiveDivision";
-import { maxCols, maxRows, SPEEDS } from "./constants";
-import { constructBorder } from "./constructBorder";
 import type { MazeType, GridType, TileType, SpeedType } from "./types";
-
 
 export const runMazeAlgo = async ({
   maze,
@@ -18,26 +16,17 @@ export const runMazeAlgo = async ({
   startTile: TileType;
   endTile: TileType;
   setIsDisabled: (isDisabled: boolean) => void;
-  speed: SpeedType;
+  speed: SpeedType | MutableRefObject<SpeedType>;
 }) => {
-  if (maze == "BINARY_TREE") {
+  if (maze === "BINARY_TREE") {
     await binaryTree(grid, startTile, endTile, setIsDisabled, speed);
   } else if (maze === "RECURSIVE_DIVISION") {
-    const currentSpeed = SPEEDS.find((s) => s.value === speed)!.value ?? 2;
-    await constructBorder(grid, startTile, endTile);
     await recursiveDivision({
       grid,
       startTile,
       endTile,
-      row: 1,
-      col: 1,
-      height: Math.floor((maxRows - 1) / 2),
-      width: Math.floor((maxCols - 1) / 2),
       setIsDisabled,
       speed,
     });
-    setTimeout(() => {
-      setIsDisabled(false);
-    }, 800 * currentSpeed);
   }
 };
